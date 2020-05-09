@@ -1,0 +1,3 @@
+[submodule "template/native/neon-serde"]
+	path = template/native/neon-serde
+	url = https://github.com/miridius/neon-serde.git
