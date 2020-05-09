@@ -6,11 +6,16 @@
   "author": "Daniel Hines <d4hines@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "ncp": "^2.0.0",
     "neon-cli": "^0.4.0",
     "yargs": "^15.3.1"
   },
+  "bin": {
+    "flamingo": "./lib/index.js"
+  },
   "scripts": {
-    "install": "node install.js"
+    "install": "node install.js",
+    "test": "node ./lib/index.js"
   },
   "devDependencies": {
     "request": "^2.88.2",

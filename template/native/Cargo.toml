@@ -27,7 +27,7 @@ path = "./logic_ddlog/types"
 path = "./logic_ddlog/differential_datalog"
 
 [dependencies.neon-serde]
-path = "../../neon-serde"
+path = "./neon-serde"
 
 [dependencies]
 serde = "1.0"

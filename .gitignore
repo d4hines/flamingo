@@ -8,3 +8,7 @@ native/artifacts.json
 
 # DDLog
 ddlog
+
+# Test
+./test/logic_alm
+
