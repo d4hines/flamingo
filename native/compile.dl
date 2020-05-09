@@ -1,0 +1,67 @@
+typedef UpperTerm = string
+
+typedef Term = Term_Upper{upper: UpperTerm}
+    | Term_Integer{integer: s64}
+
+typedef Variable = string
+
+typedef Expression = ExpressionTerm{term: Term}
+    | ExpressionVarible{variable: Variable}
+
+typedef Enum = Enum {
+    name: UpperTerm,
+    terms: Vec<UpperTerm>
+}
+
+typedef Sort = Sort {
+    name: UpperTerm,
+    attributes: Vec<FunctionDeclaration>
+}
+
+typedef FunctionDeclaration = FunctionDeclaration {
+    params: Option<Vec<UpperTerm>>,
+    ret: UpperTerm
+}
+
+typedef Fluents = Fluents {
+    basic: Vec<FunctionDeclaration>,
+    defined: Vec<FunctionDeclaration>
+}
+
+typedef FunctionAssignment = FunctionAssignment {
+    name : UpperTerm,
+    arguments : Vec<Expression>,
+    value : Option<Expression>
+}
+
+typedef Axiom = Static_Assignment {
+    static: UpperTerm,
+    value: Term
+}
+| Fact {
+    fact: FunctionAssignment
+}
+
+| Rule {
+    head: FunctionAssignment,
+    body: Vec<RuleClause>
+}
+
+typedef RuleClause = ClauseFunctionAssignment {function_assingment: FunctionAssignment}
+| ClauseVariableIntroduction{variable_introduction: VariableIntroduction}
+
+typedef VariableIntroduction = VariableIntroduction {
+    new_variable: Variable,
+    value: ArithmeticExpression
+}
+
+// Pawn off parsing this to DDLog and hope for the best.
+typedef ArithmeticExpression = string
+
+typedef Module = Module{
+    enums: Vec<Enum>,
+    sorts: Vec<Sort>,
+    statics: Vec<FunctionDeclaration>,
+    fluents: Fluents,
+    axioms: Vec<Axiom>
+}
