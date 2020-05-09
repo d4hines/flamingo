@@ -1,3 +1,4 @@
+///////////// ALM AST //////////////
 typedef UpperTerm = string
 
 typedef Term = Term_Upper{upper: UpperTerm}
@@ -31,7 +32,8 @@ typedef Fluents = Fluents {
 typedef FunctionAssignment = FunctionAssignment {
     name : UpperTerm,
     arguments : Vec<Expression>,
-    value : Option<Expression>
+    value : Option<Expression>,
+    negated : bool
 }
 
 typedef Axiom = Static_Assignment {
@@ -48,9 +50,9 @@ typedef Axiom = Static_Assignment {
 }
 
 typedef RuleClause = ClauseFunctionAssignment {function_assingment: FunctionAssignment}
-| ClauseDDLogExpression {ddlog_expression: DDLogExpression}
+| ClauseDDLogExpression {raw_ddlog: Raw_DDLog}
 
-typedef DDLogExpression = string
+typedef Raw_DDLog = string
 
 typedef Module = Module{
     enums: Vec<Enum>,
@@ -59,3 +61,23 @@ typedef Module = Module{
     fluents: Fluents,
     axioms: Vec<Axiom>
 }
+
+///////////// DDLog AST ////////////
+typedef DD_Nodes = Vec<UpperTerm>
+typedef DD_Attribute_Wrapers = Vec<UpperTerm>
+typedef DD_Attribute_Relations = Vec<UpperTerm>
+typedef DD_Links = (UpperTerm, UpperTerm)
+typedef DD_Static_Declarations = Vec<FunctionDeclaration>
+typedef DD_Fluent_Declarations = Vec<FunctionDeclaration>
+typedef DD_Defined_Fluent_Declarations = Vec<FunctionDeclaration>
+typedef DD_Output_Values = Vec<UpperTerm>
+typedef DD_Output_Rules = Vec<UpperTerm>
+typedef DD_Static_Values = Vec<(UpperTerm, Term)>
+
+typedef DD_FluentKind = Basic | Defined
+
+typedef DD_Function_Assignment = DD_Function_Assignment {
+    kind: DD_FluentKind,
+    body: FunctionAssignment
+}
+

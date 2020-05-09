@@ -1,7 +1,6 @@
 module Window_demo
     enums
         Axes :: { X, Y }
-
     sorts
         Rectangles :: Universe
             attributes
