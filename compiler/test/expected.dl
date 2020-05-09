@@ -34,6 +34,7 @@ output relation OutFluent(params: FluentParam, ret: FluentValue)
 
 // Sort Literals
 typedef Axes = X | Y
+typedef Direcitons = DLeft | DRight | DTop | DBottom
 
 // Nodes of the hierarchy
 typedef Node = Universe
