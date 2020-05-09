@@ -1,6 +1,6 @@
 {
   "name": "flamingo-logic",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An ALM comiler and runtime for reactive systems.",
   "main": "lib/index.js",
   "author": "Daniel Hines <d4hines@gmail.com>",
@@ -8,7 +8,9 @@
   "dependencies": {
     "ncp": "^2.0.0",
     "neon-cli": "^0.4.0",
-    "yargs": "^15.3.1"
+    "yargs": "^15.3.1",
+    "request": "^2.88.2",
+    "tar": "^6.0.2"
   },
   "bin": {
     "flamingo": "./lib/index.js"
@@ -16,9 +18,5 @@
   "scripts": {
     "install": "node install.js",
     "test": "node ./lib/index.js"
-  },
-  "devDependencies": {
-    "request": "^2.88.2",
-    "tar": "^6.0.2"
   }
 }
