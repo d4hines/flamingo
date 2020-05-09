@@ -1,0 +1,89 @@
+/////////// Static part of lib
+// Built-in functions
+function abs(n: s64): s64 {
+   if (n > 0) {
+       n
+   } else {
+       n * -1
+   }
+}
+
+// Built-in Object ID type
+typedef OID = s64
+
+input relation Object(oid: OID, sort: Node, attributes: Map<string, AttributeValue>)
+primary key (x) x.oid
+
+// Links together nodes in the sort hiearchy
+relation Link(_1: Node, _2: Node)
+Link(Actions, Universe).
+
+relation Is_A(_1: OID, _2: Node)
+Is_A(obj, sort) :- Object(obj, sort, _).
+
+relation Instance(_1: OID, _2: Node)
+Instance(obj, sort) :- Is_A(obj, sort).
+Instance(obj, sort1) :- Instance(obj, sort2), Link(sort2, sort1).
+
+input relation InFluent(params: FluentParam, ret: FluentValue)
+primary key (x) x.params
+
+output relation OutFluent(params: FluentParam, ret: FluentValue)
+
+//////////// Dynamic Part of Lib
+
+// Sort Literals
+typedef Axes = X | Y
+
+// Nodes of the hierarchy
+typedef Node = Universe
+    | Actions
+    | Rectangles
+    
+#[rust="serde(untagged)"]
+typedef AttributeValue = Attr_Width{width: s64}
+    | Attr_Height{height: s64} 
+    
+relation Width(oid: OID, value: s64)
+Width(oid, x) :- Object(oid, _, attributes),
+    Some{Attr_Width{var x}} = map_get(attributes, "width").
+
+relation Height(oid: OID, value: s64)
+Height(oid, x) :- Object(oid, _, attributes),
+    Some{Attr_Height{var x}} = map_get(attributes, "height").
+
+// Encode Hiearchy facts
+Link(Rectangles, Universe).
+
+// Statics
+relation Opposite_Direction(_1: Axes, ret: Axes)
+
+/////// Fluents //////////////////
+// Basic
+typedef FluentParam = Param_Grouped_With{grouped_with_1: OID, grouped_with_2: OID}
+
+typedef FluentValue = Value_Grouped_With{grouped_with_ret: bool}
+
+// Defined
+relation Side(_1: OID, _2: Axes, _3: s64)
+relation Distance(_1: OID, _2: OID, _3: s64)
+relation Overlaps(_1: OID, _2: OID)
+
+// Bundle of all the output fluents
+#[rust="serde(untagged)"]
+typedef Output_Value = Out_Side{side: Side}
+output relation Output(val: Output_Value)
+
+Output(Out_Side{side}) :- Side[side].
+
+///////////// Axioms ///////////////
+function static_Corner_Snapping_Threshold(): s64 {
+    30
+}
+
+Distance(a, b, min_d) :-
+    Instance(a, Rectangles),
+    Instance(b, Rectangles),
+    not Overlaps(a, b),
+    Opposite_Direction(dir, dir__prime),
+    var min_d = Aggregate((a, b), group_min(b)).

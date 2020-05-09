@@ -35,7 +35,7 @@ typedef FunctionAssignment = FunctionAssignment {
 }
 
 typedef Axiom = Static_Assignment {
-    static: UpperTerm,
+    name: UpperTerm,
     value: Term
 }
 | Fact {
@@ -48,15 +48,9 @@ typedef Axiom = Static_Assignment {
 }
 
 typedef RuleClause = ClauseFunctionAssignment {function_assingment: FunctionAssignment}
-| ClauseVariableIntroduction{variable_introduction: VariableIntroduction}
+| ClauseDDLogExpression {ddlog_expression: DDLogExpression}
 
-typedef VariableIntroduction = VariableIntroduction {
-    new_variable: Variable,
-    value: ArithmeticExpression
-}
-
-// Pawn off parsing this to DDLog and hope for the best.
-typedef ArithmeticExpression = string
+typedef DDLogExpression = string
 
 typedef Module = Module{
     enums: Vec<Enum>,

@@ -17,6 +17,8 @@
   },
   "scripts": {
     "install": "node install.js",
-    "test": "node ./lib/index.js"
+    "build:ddlog": "cd compiler/src && wsl ../../ddlog/bin/ddlog -i ./compile.dl -L ../../ddlog/lib",
+    "pretest": "yarn build:ddlog",
+    "test": "cd compiler && cargo run ./test/logic.alm"
   }
 }

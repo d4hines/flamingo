@@ -1,0 +1,34 @@
+module Window_demo
+    enums
+        Axes :: { X, Y }
+
+    sorts
+        Rectangles :: Universe
+            attributes
+                Width : Integers
+                Height : Integers
+    statics
+        Opposite_Direction : Directions -> Directions.
+        Snapping_Threshold : Integers
+    fluents
+        basic
+            Grouped_With : Rectangles x Rectangles -> Booleans
+        defined
+            output Side : Rectangles x Axes -> Booleans.
+            Distance : Rectangles x Rectangles -> Integers
+    axioms
+        Snapping_Threshold = 30
+        Corner_Snapping_Threshold = 30.
+
+        Opposite_Direction(a) = b if
+            Opposite_Direction(b) = a.
+        
+        Direction_Factor(DRight) = 1.
+        
+        Distance(a, b, min_d) :-
+            Instance(a, Rectangles),
+            Instance(b, Rectangles),
+            -Overlaps(a, b),
+            Opposite_Direction(dir, dir'),
+            #ddlog var min_d = Aggregate((a, b), group_min(b)).
+
