@@ -372,40 +372,40 @@ Link(Windows, Rectangles)."
             )
         }
 
-    //     #[test]
-    //     fn printing_static_declarations() {
-    //         let static_declarations = vec![
-    //             FunctionDeclaration {
-    //                 name: "Opposite_Directions".to_string(),
-    //                 params: Some(vec!["Directions".to_string()]),
-    //                 ret: "Directions".to_string(),
-    //             },
-    //             FunctionDeclaration {
-    //                 name: "Snapping_Threshold".to_string(),
-    //                 params: None,
-    //                 ret: "s64".to_string(),
-    //             },
-    //         ];
-    //         assert_eq!(
-    //             print_static_declarations(static_declarations),
-    //             "relation Opposite_Directions(_1: Directions, ret: Directions)"
-    //         )
-    //     }
+        #[test]
+        fn printing_static_declarations() {
+            let static_declarations = vec![
+                FunctionDeclaration {
+                    name: "Opposite_Directions".to_string(),
+                    params: Some(vec!["Directions".to_string()]),
+                    ret: "Directions".to_string(),
+                },
+                FunctionDeclaration {
+                    name: "Snapping_Threshold".to_string(),
+                    params: None,
+                    ret: "s64".to_string(),
+                },
+            ];
+            assert_eq!(
+                print_static_declarations(static_declarations),
+                "relation Opposite_Directions(_1: Directions, ret: Directions)"
+            )
+        }
 
-    //     fn make_basic_fluent_declarations() -> FunctionDeclarations {
-    //         vec![
-    //             FunctionDeclaration {
-    //                 name: "Grouped_With".to_string(),
-    //                 params: Some(vec!["Windows".to_string(), "Windows".to_string()]),
-    //                 ret: "Booleans".to_string(),
-    //             },
-    //             FunctionDeclaration {
-    //                 name: "Moving".to_string(),
-    //                 params: Some(vec!["Windows".to_string()]),
-    //                 ret: "Booleans".to_string(),
-    //             },
-    //         ]
-    //     }
+        fn make_basic_fluent_declarations() -> FunctionDeclarations {
+            vec![
+                FunctionDeclaration {
+                    name: "Grouped_With".to_string(),
+                    params: Some(vec!["Windows".to_string(), "Windows".to_string()]),
+                    ret: "Booleans".to_string(),
+                },
+                FunctionDeclaration {
+                    name: "Moving".to_string(),
+                    params: Some(vec!["Windows".to_string()]),
+                    ret: "Booleans".to_string(),
+                },
+            ]
+        }
 
     //     #[test]
     //     fn printing_basic_fluent_params() {
