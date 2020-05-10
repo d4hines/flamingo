@@ -6,10 +6,18 @@ use std::fs;
 type UpperTerm = String;
 
 trait PrintAsDDLog {
+    fn to_ddlog(&self) -> String;
+}
+
+trait PrintAsDDLogType {
     fn to_ddlog_type(&self, enums: &Enums) -> String;
 }
 
-impl PrintAsDDLog for UpperTerm {
+trait PrintAsDDLogValue {
+    fn to_ddlog_value(&self) -> String;
+}
+
+impl PrintAsDDLogType for UpperTerm {
     fn to_ddlog_type(&self, enums: &Enums) -> String {
         let values = enums
             .into_iter()
@@ -27,16 +35,41 @@ impl PrintAsDDLog for UpperTerm {
     }
 }
 
+#[derive(Clone)]
 enum Term {
     TermUpper(UpperTerm),
     TermInteger(i64),
 }
 
-type Variable = String;
+impl PrintAsDDLogValue for Term {
+    fn to_ddlog_value(&self) -> String {
+        match self {
+            Term::TermUpper(s) => s.clone(),
+            Term::TermInteger(i) => i.to_string(),
+        }
+    }
+}
 
+type Variable = String;
+impl PrintAsDDLogValue for Variable {
+    fn to_ddlog_value(&self) -> String {
+        self.replace("'", "__prime")
+    }
+}
+
+#[derive(Clone)]
 enum Expression {
     ExpressionTerm(Term),
     ExpressionVariable(Variable),
+}
+
+impl PrintAsDDLogValue for Expression {
+    fn to_ddlog_value(&self) -> String {
+        match self {
+            Expression::ExpressionTerm(t) => t.to_ddlog_value(),
+            Expression::ExpressionVariable(s) => s.clone().to_ddlog_value(),
+        }
+    }
 }
 
 struct Enum {
@@ -79,7 +112,36 @@ struct FunctionAssignment {
     negated: bool,
 }
 
+impl PrintAsDDLog for FunctionAssignment {
+    fn to_ddlog(&self) -> String {
+        let mut args = self
+            .arguments
+            .clone()
+            .into_iter()
+            .map(|e| e.to_ddlog_value())
+            .collect::<Vec<String>>();
+        match &self.value {
+            Some(e) => args.push(e.to_ddlog_value()),
+            None => {}
+        };
+        let negation = if self.negated {"not "} else {""};
+        format!("{}{}({})", negation, self.name, args.join(", "))
+    }
+}
+
 type RawDDLog = String;
+
+impl PrintAsDDLog for RawDDLog {
+    fn to_ddlog(&self) -> String {
+        if self.ends_with(".") || self.ends_with(",") {
+            let mut s = self.clone();
+            s.pop();
+            s
+        } else {
+            self.clone()
+        }
+    }
+}
 
 enum RuleClause {
     ClauseFunctionAssignment(FunctionAssignment),
@@ -338,6 +400,8 @@ fn print_output_rules(defined_fluents: DefinedFluentDeclarations) -> String {
         .join("\n")
 }
 
+
+
 fn print_axiom(statics: &Statics, enums: &Enums, axiom: Axiom) -> String {
     match axiom {
         Axiom::StaticAssignment { name, value } => {
@@ -347,10 +411,22 @@ fn print_axiom(statics: &Statics, enums: &Enums, axiom: Axiom) -> String {
                 .expect(format!("Unknown static function \"{}\"", name).as_str());
             format!(
                 "function static_{}(): {} {{ {} }}",
-                name, declaration.ret.to_ddlog_type(enums), value
+                name,
+                declaration.ret.to_ddlog_type(enums),
+                value
             )
         }
-        _ => "".to_string(),
+        Axiom::Fact(f) => format!("{}.", f.to_ddlog()),
+        Axiom::Rule{head, body} => {
+            let body_clauses = body
+            .into_iter()
+                .map(|c| match c {
+                    RuleClause::ClauseFunctionAssignment(f) => f.to_ddlog(),
+                    RuleClause::ClauseRawDDLog(raw) => raw.to_ddlog()
+                }).collect::<Vec<String>>()
+                .join(",\n    ");
+            format!("{} :-\n    {}.", head.to_ddlog(), body_clauses)
+        }
     }
 }
 
@@ -568,88 +644,90 @@ typedef Output_Value = Out_Side{side: Side}"
             value: 30,
         };
         assert_eq!(
-            print_axiom(&make_static_declarations(), &Vec::new(),static_assignment),
+            print_axiom(&make_static_declarations(), &Vec::new(), static_assignment),
             "function static_Snapping_Threshold(): s64 { 30 }"
         )
     }
 
-    //     #[test]
-    //     fn printing_facts() {
-    //         let fact = Axiom::Fact(FunctionAssignment {
-    //             name: "Distance".to_string(),
-    //             negated: false,
-    //             arguments: vec![
-    //                 Expression::ExpressionTerm(Term::TermInteger(1)),
-    //                 Expression::ExpressionTerm(Term::TermInteger(2)),
-    //                 Expression::ExpressionTerm(Term::TermInteger(10)),
-    //             ],
-    //             value: None,
-    //         });
-    //         assert_eq!(print_axiom(fact), "Distance(1, 2, 10).")
-    //     }
+    #[test]
+    fn printing_facts() {
+        let fact = Axiom::Fact(FunctionAssignment {
+            name: "Distance".to_string(),
+            negated: false,
+            arguments: vec![
+                Expression::ExpressionTerm(Term::TermInteger(1)),
+                Expression::ExpressionTerm(Term::TermInteger(2)),
+                Expression::ExpressionTerm(Term::TermInteger(10)),
+            ],
+            value: None,
+        });
+        assert_eq!(
+            print_axiom(&Vec::new(), &Vec::new(), fact),
+            "Distance(1, 2, 10)."
+        )
+    }
 
-    //     #[test]
-    //     fn printing_rules() {
-    //         let rule = Axiom::Rule {
-    //             head: FunctionAssignment {
-    //                 name: "Distance".to_string(),
-    //                 negated: false,
-    //                 arguments: vec![
-    //                     Expression::ExpressionVariable("a".to_string()),
-    //                     Expression::ExpressionVariable("b".to_string()),
-    //                     Expression::ExpressionVariable("min_d".to_string()),
-    //                 ],
-    //                 value: None,
-    //             },
-    //             body: vec![
-    //                 RuleClause::ClauseFunctionAssignment(FunctionAssignment {
-    //                     name: "Instance".to_string(),
-    //                     negated: false,
-    //                     arguments: vec![
-    //                         Expression::ExpressionVariable("a".to_string()),
-    //                         Expression::ExpressionTerm(Term::TermUpper("Rectangles".to_string())),
-    //                     ],
-    //                     value: None,
-    //                 }),
-    //                 RuleClause::ClauseFunctionAssignment(FunctionAssignment {
-    //                     name: "Instance".to_string(),
-    //                     negated: false,
-    //                     arguments: vec![
-    //                         Expression::ExpressionVariable("b".to_string()),
-    //                         Expression::ExpressionTerm(Term::TermUpper("Rectangles".to_string())),
-    //                     ],
-    //                     value: None,
-    //                 }),
-    //                 RuleClause::ClauseFunctionAssignment(FunctionAssignment {
-    //                     name: "Overlaps".to_string(),
-    //                     negated: true,
-    //                     arguments: vec![
-    //                         Expression::ExpressionVariable("a".to_string()),
-    //                         Expression::ExpressionVariable("b".to_string()),
-    //                     ],
-    //                     value: None,
-    //                 }),
-    //                 RuleClause::ClauseFunctionAssignment(FunctionAssignment {
-    //                     name: "Opposite_Direction".to_string(),
-    //                     negated: false,
-    //                     arguments: vec![
-    //                         Expression::ExpressionVariable("dir".to_string()),
-    //                     ],
-    //                     value: Some(Expression::ExpressionVariable("dir__prime".to_string())),
-    //                 }),
-    //                 RuleClause::ClauseRawDDLog("var min_d = Aggregate((a, b), group_min(b)).".to_string())
-    //             ],
-    //         };
+    #[test]
+    fn printing_rules() {
+        let rule = Axiom::Rule {
+            head: FunctionAssignment {
+                name: "Distance".to_string(),
+                negated: false,
+                arguments: vec![
+                    Expression::ExpressionVariable("a".to_string()),
+                    Expression::ExpressionVariable("b".to_string()),
+                    Expression::ExpressionVariable("min_d".to_string()),
+                ],
+                value: None,
+            },
+            body: vec![
+                RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                    name: "Instance".to_string(),
+                    negated: false,
+                    arguments: vec![
+                        Expression::ExpressionVariable("a".to_string()),
+                        Expression::ExpressionTerm(Term::TermUpper("Rectangles".to_string())),
+                    ],
+                    value: None,
+                }),
+                RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                    name: "Instance".to_string(),
+                    negated: false,
+                    arguments: vec![
+                        Expression::ExpressionVariable("b".to_string()),
+                        Expression::ExpressionTerm(Term::TermUpper("Rectangles".to_string())),
+                    ],
+                    value: None,
+                }),
+                RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                    name: "Overlaps".to_string(),
+                    negated: true,
+                    arguments: vec![
+                        Expression::ExpressionVariable("a".to_string()),
+                        Expression::ExpressionVariable("b".to_string()),
+                    ],
+                    value: None,
+                }),
+                RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                    name: "Opposite_Direction".to_string(),
+                    negated: false,
+                    arguments: vec![Expression::ExpressionVariable("dir".to_string())],
+                    value: Some(Expression::ExpressionVariable("dir__prime".to_string())),
+                }),
+                RuleClause::ClauseRawDDLog(
+                    "var min_d = Aggregate((a, b), group_min(b)).".to_string(),
+                ),
+            ],
+        };
 
-    //         assert_eq!(
-    //             print_axiom(rule),
-    //             "Distance(a, b, min_d) :-
-    //     Instance(a, Rectangles),
-    //     Instance(b, Rectangles),
-    //     not Overlaps(a, b),
-    //     Opposite_Direction(dir, dir__prime),
-    //     var min_d = Aggregate((a, b), group_min(b)).
-    // "
-    //         )
-    //     }
+        assert_eq!(
+            print_axiom(&Vec::new(), &Vec::new(), rule),
+            "Distance(a, b, min_d) :-
+    Instance(a, Rectangles),
+    Instance(b, Rectangles),
+    not Overlaps(a, b),
+    Opposite_Direction(dir, dir__prime),
+    var min_d = Aggregate((a, b), group_min(b))."
+        )
+    }
 }
