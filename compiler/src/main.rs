@@ -6,15 +6,12 @@ use std::fs;
 type UpperTerm = String;
 
 trait PrintAsDDLog {
-    fn to_ddlog(&self, enums: &Enums) -> String;
+    fn to_ddlog_type(&self, enums: &Enums) -> String;
 }
 
 impl PrintAsDDLog for UpperTerm {
-    fn to_ddlog(&self, enums: &Enums) -> String {
-        let values = enums
-            .into_iter()
-            .flat_map(|e| e.clone().terms.clone())
-            .collect::<Vec<String>>();
+    fn to_ddlog_type(&self, enums: &Enums) -> String {
+        let values = enums.into_iter().map(|e| e.name.clone()).collect::<Vec<String>>();
         if values.contains(self) {
             self.clone()
         } else {
@@ -154,7 +151,7 @@ fn print_attribute_values(enums: &Enums, sorts: Sorts) -> String {
                             "Attr_{}{{{}: {}}}",
                             f.name,
                             f.name.to_lowercase(),
-                            f.ret.to_ddlog(enums)
+                            f.ret.to_ddlog_type(enums)
                         )
                     })
                     .collect::<Vec<String>>()
@@ -178,7 +175,7 @@ fn print_attribute_relations(enums: &Enums, sorts: Sorts) -> String {
 {}(oid, x) :- Object(oid, _, attributes),
     Some{{Attr_{}{{var x}}}} = map_get(attributes, \"{}\").",
                             f.name,
-                            f.ret.to_ddlog(enums),
+                            f.ret.to_ddlog_type(enums),
                             f.name,
                             f.name,
                             f.name.to_lowercase()
@@ -238,7 +235,7 @@ fn print_static_declarations(statics: Statics) -> String {
         .join("\n\n")
 }
 
-fn print_basic_fluent_params(basic_fluents: FunctionDeclarations) -> String {
+fn print_basic_fluent_params(enums: &Enums, basic_fluents: FunctionDeclarations) -> String {
     let types = basic_fluents
         .into_iter()
         .map(|f| {
@@ -247,7 +244,12 @@ fn print_basic_fluent_params(basic_fluents: FunctionDeclarations) -> String {
                 Some(params) => {
                     let mut v: Vec<String> = Vec::new();
                     for i in 0..params.len() {
-                        let p = format!("{}_{}: {}", lower_case, i + 1, params[i]);
+                        let p = format!(
+                            "{}_{}: {}",
+                            lower_case,
+                            i + 1,
+                            params[i].to_ddlog_type(enums)
+                        );
                         v.push(p);
                     }
                     v
@@ -260,13 +262,49 @@ fn print_basic_fluent_params(basic_fluents: FunctionDeclarations) -> String {
     print_ddlog_enum("FluentParam", types)
 }
 
-fn print_basic_fluent_values(basic_fluents: FunctionDeclarations) -> String {
-    unimplemented!();
+fn print_basic_fluent_values(enums: &Enums, basic_fluents: FunctionDeclarations) -> String {
+    let types = basic_fluents
+        .into_iter()
+        .map(|f| {
+            format!(
+                "Value_{}{{{}_ret: {}}}",
+                f.name,
+                f.name.to_lowercase(),
+                f.ret.to_ddlog_type(enums)
+            )
+        })
+        .collect();
+    print_ddlog_enum("FluentValue", types)
 }
 
-fn print_defined_fluent_relations(defined_fluents: DefinedFluentDeclarations) -> String {
-    unimplemented!();
+fn print_defined_fluent_relations(
+    enums: &Enums,
+    defined_fluents: DefinedFluentDeclarations,
+) -> String {
+    defined_fluents
+        .into_iter()
+        .map(|dec|{
+            let d = dec.declaration;
+            let param_vec = match d.params {
+                Some(params) => {
+                    let mut v: Vec<String> = Vec::new();
+                    for i in 0..params.len() {
+                        let p = format!(
+                            "_{}: {}",
+                            i + 1,
+                            params[i].to_ddlog_type(enums)
+                        );
+                        v.push(p);
+                    }
+                    v
+                }
+                None => Vec::new(),
+            };
+            format!("relation {}({})", d.name, param_vec.join(", "))
+        }).collect::<Vec<String>>()
+        .join("\n")
 }
+
 fn print_output_relations(defined_fluents: DefinedFluentDeclarations) -> String {
     unimplemented!();
 }
@@ -363,106 +401,110 @@ Height(oid, x) :- Object(oid, _, attributes),
         );
     }
 
-        #[test]
-        fn printing_links() {
-            assert_eq!(
-                print_links(make_sorts()),
-                "Link(Rectangles, Universe).
+    #[test]
+    fn printing_links() {
+        assert_eq!(
+            print_links(make_sorts()),
+            "Link(Rectangles, Universe).
 Link(Windows, Rectangles)."
-            )
-        }
+        )
+    }
 
-        #[test]
-        fn printing_static_declarations() {
-            let static_declarations = vec![
-                FunctionDeclaration {
-                    name: "Opposite_Directions".to_string(),
-                    params: Some(vec!["Directions".to_string()]),
-                    ret: "Directions".to_string(),
-                },
-                FunctionDeclaration {
-                    name: "Snapping_Threshold".to_string(),
-                    params: None,
-                    ret: "s64".to_string(),
-                },
-            ];
-            assert_eq!(
-                print_static_declarations(static_declarations),
-                "relation Opposite_Directions(_1: Directions, ret: Directions)"
-            )
-        }
+    #[test]
+    fn printing_static_declarations() {
+        let static_declarations = vec![
+            FunctionDeclaration {
+                name: "Opposite_Directions".to_string(),
+                params: Some(vec!["Directions".to_string()]),
+                ret: "Directions".to_string(),
+            },
+            FunctionDeclaration {
+                name: "Snapping_Threshold".to_string(),
+                params: None,
+                ret: "s64".to_string(),
+            },
+        ];
+        assert_eq!(
+            print_static_declarations(static_declarations),
+            "relation Opposite_Directions(_1: Directions, ret: Directions)"
+        )
+    }
 
-        fn make_basic_fluent_declarations() -> FunctionDeclarations {
-            vec![
-                FunctionDeclaration {
-                    name: "Grouped_With".to_string(),
-                    params: Some(vec!["Windows".to_string(), "Windows".to_string()]),
+    fn make_basic_fluent_declarations() -> FunctionDeclarations {
+        vec![
+            FunctionDeclaration {
+                name: "Grouped_With".to_string(),
+                params: Some(vec!["Windows".to_string(), "Windows".to_string()]),
+                ret: "Booleans".to_string(),
+            },
+            FunctionDeclaration {
+                name: "Moving".to_string(),
+                params: Some(vec!["Windows".to_string()]),
+                ret: "Booleans".to_string(),
+            },
+        ]
+    }
+
+    #[test]
+    fn printing_basic_fluent_params() {
+        assert_eq!(
+            print_basic_fluent_params(&Vec::new(), make_basic_fluent_declarations()),
+            "typedef FluentParam = Param_Grouped_With{grouped_with_1: OID, grouped_with_2: OID}
+    | Param_Moving{moving_1: OID}"
+        )
+    }
+
+    #[test]
+    fn printing_basic_fluent_values() {
+        assert_eq!(
+            print_basic_fluent_values(&Vec::new(), make_basic_fluent_declarations()),
+            "typedef FluentValue = Value_Grouped_With{grouped_with_ret: bool}
+    | Value_Moving{moving_ret: bool}"
+                .to_string(),
+        )
+    }
+
+    fn make_defined_fluent_declarations() -> DefinedFluentDeclarations {
+        vec![
+            DefinedFluentDeclaration {
+                output: true,
+                declaration: FunctionDeclaration {
+                    name: "Side".to_string(),
+                    params: Some(vec![
+                        "Windows".to_string(),
+                        "Axes".to_string(),
+                        "Integers".to_string(),
+                    ]),
                     ret: "Booleans".to_string(),
                 },
-                FunctionDeclaration {
-                    name: "Moving".to_string(),
-                    params: Some(vec!["Windows".to_string()]),
+            },
+            DefinedFluentDeclaration {
+                output: false,
+                declaration: FunctionDeclaration {
+                    name: "Distance".to_string(),
+                    params: Some(vec![
+                        "Windows".to_string(),
+                        "Windows".to_string(),
+                        "Integers".to_string(),
+                    ]),
                     ret: "Booleans".to_string(),
                 },
-            ]
-        }
+            },
+        ]
+    }
 
-    //     #[test]
-    //     fn printing_basic_fluent_params() {
-    //         assert_eq!(
-    //             print_basic_fluent_params(make_basic_fluent_declarations()),
-    //             "typedef FluentParam = Param_Grouped_With{grouped_with_1: OID, grouped_with_2: OID}
-    //         | Param_Moving{moving_1: OID}"
-    //         )
-    //     }
-
-    //     #[test]
-    //     fn printing_basic_fluent_values() {
-    //         assert_eq!(
-    //             print_basic_fluent_params(make_basic_fluent_declarations()),
-    //             "typedef FluentValue = Value_Grouped_With{grouped_with_ret: bool}
-    //     | Value_Moving{moving_ret}"
-    //                 .to_string(),
-    //         )
-    //     }
-
-    //     fn make_defined_fluent_declarations() -> DefinedFluentDeclarations {
-    //         vec![
-    //             DefinedFluentDeclaration {
-    //                 output: true,
-    //                 declaration: FunctionDeclaration {
-    //                     name: "Side".to_string(),
-    //                     params: Some(vec![
-    //                         "OID".to_string(),
-    //                         "Axes".to_string(),
-    //                         "s64".to_string(),
-    //                     ]),
-    //                     ret: "bool".to_string(),
-    //                 },
-    //             },
-    //             DefinedFluentDeclaration {
-    //                 output: false,
-    //                 declaration: FunctionDeclaration {
-    //                     name: "Distance".to_string(),
-    //                     params: Some(vec![
-    //                         "OID".to_string(),
-    //                         "OID".to_string(),
-    //                         "s64".to_string(),
-    //                     ]),
-    //                     ret: "bool".to_string(),
-    //                 },
-    //             },
-    //         ]
-    //     }
-
-    //     #[test]
-    //     fn printing_defined_fluent_relations() {
-    //         assert_eq!(
-    //             print_defined_fluent_relations(make_defined_fluent_declarations()),
-    //             "relation Side(_1: OID, _2: Axes, _3: s64)
-    // relation Distance(_1: OID, _2: OID, _3: s64)"
-    //         )
-    //     }
+    #[test]
+    fn printing_defined_fluent_relations() {
+        let enums = vec![Enum {
+            name: "Axes".to_string(),
+            terms: vec!["X".to_string(), "Y".to_string()],
+        }];
+        assert_eq!(
+            print_defined_fluent_relations(&enums, make_defined_fluent_declarations()),
+            "relation Side(_1: OID, _2: Axes, _3: s64)
+relation Distance(_1: OID, _2: OID, _3: s64)"
+        )
+    }
 
     //     #[test]
     //     fn printing_output_relations() {
