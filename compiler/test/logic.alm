@@ -28,6 +28,6 @@ module Window_demo
             Instance(a, Rectangles),
             Instance(b, Rectangles),
             -Overlaps(a, b),
-            Opposite_Direction(dir, dir'),
+            Opposite_Direction(dir) = dir',
             #ddlog var min_d = Aggregate((a, b), group_min(b)).
 

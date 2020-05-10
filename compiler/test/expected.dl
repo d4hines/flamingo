@@ -82,6 +82,8 @@ function static_Corner_Snapping_Threshold(): s64 {
     30
 }
 
+Distance(1, 2, 10).
+
 Distance(a, b, min_d) :-
     Instance(a, Rectangles),
     Instance(b, Rectangles),
