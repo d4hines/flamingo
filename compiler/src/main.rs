@@ -363,14 +363,14 @@ Height(oid, x) :- Object(oid, _, attributes),
         );
     }
 
-    //     #[test]
-    //     fn printing_links() {
-    //         assert_eq!(
-    //             print_links(make_sorts()),
-    //             "Link(Rectangles, Universe).
-    // Link(Windows, Rectangles)."
-    //         )
-    //     }
+        #[test]
+        fn printing_links() {
+            assert_eq!(
+                print_links(make_sorts()),
+                "Link(Rectangles, Universe).
+Link(Windows, Rectangles)."
+            )
+        }
 
     //     #[test]
     //     fn printing_static_declarations() {
