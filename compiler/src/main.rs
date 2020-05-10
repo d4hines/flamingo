@@ -11,7 +11,10 @@ trait PrintAsDDLog {
 
 impl PrintAsDDLog for UpperTerm {
     fn to_ddlog_type(&self, enums: &Enums) -> String {
-        let values = enums.into_iter().map(|e| e.name.clone()).collect::<Vec<String>>();
+        let values = enums
+            .into_iter()
+            .map(|e| e.name.clone())
+            .collect::<Vec<String>>();
         if values.contains(self) {
             self.clone()
         } else {
@@ -283,17 +286,13 @@ fn print_defined_fluent_relations(
 ) -> String {
     defined_fluents
         .into_iter()
-        .map(|dec|{
+        .map(|dec| {
             let d = dec.declaration;
             let param_vec = match d.params {
                 Some(params) => {
                     let mut v: Vec<String> = Vec::new();
                     for i in 0..params.len() {
-                        let p = format!(
-                            "_{}: {}",
-                            i + 1,
-                            params[i].to_ddlog_type(enums)
-                        );
+                        let p = format!("_{}: {}", i + 1, params[i].to_ddlog_type(enums));
                         v.push(p);
                     }
                     v
@@ -301,7 +300,8 @@ fn print_defined_fluent_relations(
                 None => Vec::new(),
             };
             format!("relation {}({})", d.name, param_vec.join(", "))
-        }).collect::<Vec<String>>()
+        })
+        .collect::<Vec<String>>()
         .join("\n")
 }
 
@@ -313,7 +313,8 @@ fn print_output_relations(defined_fluents: DefinedFluentDeclarations) -> String 
         .map(|dec| {
             let name = dec.declaration.name;
             format!("Out_{}{{{}: {}}}", name, name.to_lowercase(), name)
-        }).collect::<Vec<String>>();
+        })
+        .collect::<Vec<String>>();
     let typedef = print_ddlog_enum("Output_Value", output_relations);
     str.push_str(typedef.as_str());
     str
@@ -325,13 +326,32 @@ fn print_output_rules(defined_fluents: DefinedFluentDeclarations) -> String {
         .filter(|dec| dec.output)
         .map(|dec| {
             let name = dec.declaration.name;
-            format!("Output(Out_{}{{{}}}) :- {}[{}].", name, name.to_lowercase(), name, name.to_lowercase())
-        }).collect::<Vec<String>>()
+            format!(
+                "Output(Out_{}{{{}}}) :- {}[{}].",
+                name,
+                name.to_lowercase(),
+                name,
+                name.to_lowercase()
+            )
+        })
+        .collect::<Vec<String>>()
         .join("\n")
 }
 
-fn print_axiom(axiom: Axiom) -> String {
-    unimplemented!();
+fn print_axiom(statics: &Statics, enums: &Enums, axiom: Axiom) -> String {
+    match axiom {
+        Axiom::StaticAssignment { name, value } => {
+            let declaration = statics
+                .into_iter()
+                .find(|s| s.name == name)
+                .expect(format!("Unknown static function \"{}\"", name).as_str());
+            format!(
+                "function static_{}(): {} {{ {} }}",
+                name, declaration.ret.to_ddlog_type(enums), value
+            )
+        }
+        _ => "".to_string(),
+    }
 }
 
 fn main() {
@@ -427,9 +447,8 @@ Link(Windows, Rectangles)."
         )
     }
 
-    #[test]
-    fn printing_static_declarations() {
-        let static_declarations = vec![
+    fn make_static_declarations() -> Statics {
+        vec![
             FunctionDeclaration {
                 name: "Opposite_Directions".to_string(),
                 params: Some(vec!["Directions".to_string()]),
@@ -438,11 +457,14 @@ Link(Windows, Rectangles)."
             FunctionDeclaration {
                 name: "Snapping_Threshold".to_string(),
                 params: None,
-                ret: "s64".to_string(),
+                ret: "Integers".to_string(),
             },
-        ];
+        ]
+    }
+    #[test]
+    fn printing_static_declarations() {
         assert_eq!(
-            print_static_declarations(static_declarations),
+            print_static_declarations(make_static_declarations()),
             "relation Opposite_Directions(_1: Directions, ret: Directions)"
         )
     }
@@ -523,33 +545,33 @@ relation Distance(_1: OID, _2: OID, _3: s64)"
         )
     }
 
-        #[test]
-        fn printing_output_relations() {
-            assert_eq!(
-                print_output_relations(make_defined_fluent_declarations()),
-                "#[rust=\"serde(untagged)\"]
+    #[test]
+    fn printing_output_relations() {
+        assert_eq!(
+            print_output_relations(make_defined_fluent_declarations()),
+            "#[rust=\"serde(untagged)\"]
 typedef Output_Value = Out_Side{side: Side}"
-            )
-        }
+        )
+    }
 
-        #[test]
-        fn printing_output_rules() {
-            assert_eq!(
-                print_output_rules(make_defined_fluent_declarations()),
-                "Output(Out_Side{side}) :- Side[side]."
-            )
-        }
-    //     #[test]
-    //     fn printing_static_function_assignment() {
-    //         let static_assignment = Axiom::StaticAssignment {
-    //             name: "Corner_Snapping_Threshold".to_string(),
-    //             value: 30,
-    //         };
-    //         assert_eq!(
-    //             print_axiom(static_assignment),
-    //             "function static_Corner_Snapping_Threshold(): s64 { 30 }"
-    //         )
-    //     }
+    #[test]
+    fn printing_output_rules() {
+        assert_eq!(
+            print_output_rules(make_defined_fluent_declarations()),
+            "Output(Out_Side{side}) :- Side[side]."
+        )
+    }
+    #[test]
+    fn printing_static_function_assignment() {
+        let static_assignment = Axiom::StaticAssignment {
+            name: "Snapping_Threshold".to_string(),
+            value: 30,
+        };
+        assert_eq!(
+            print_axiom(&make_static_declarations(), &Vec::new(),static_assignment),
+            "function static_Snapping_Threshold(): s64 { 30 }"
+        )
+    }
 
     //     #[test]
     //     fn printing_facts() {
