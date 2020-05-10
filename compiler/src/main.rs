@@ -320,7 +320,14 @@ fn print_output_relations(defined_fluents: DefinedFluentDeclarations) -> String 
 }
 
 fn print_output_rules(defined_fluents: DefinedFluentDeclarations) -> String {
-    unimplemented!();
+    defined_fluents
+        .into_iter()
+        .filter(|dec| dec.output)
+        .map(|dec| {
+            let name = dec.declaration.name;
+            format!("Output(Out_{}{{{}}}) :- {}[{}].", name, name.to_lowercase(), name, name.to_lowercase())
+        }).collect::<Vec<String>>()
+        .join("\n")
 }
 
 fn print_axiom(axiom: Axiom) -> String {
@@ -525,13 +532,13 @@ typedef Output_Value = Out_Side{side: Side}"
             )
         }
 
-    //     #[test]
-    //     fn printing_output_rules() {
-    //         assert_eq!(
-    //             print_output_rules(make_defined_fluent_declarations()),
-    //             "Output(Out_Side{side}) :- Side[side]."
-    //         )
-    //     }
+        #[test]
+        fn printing_output_rules() {
+            assert_eq!(
+                print_output_rules(make_defined_fluent_declarations()),
+                "Output(Out_Side{side}) :- Side[side]."
+            )
+        }
     //     #[test]
     //     fn printing_static_function_assignment() {
     //         let static_assignment = Axiom::StaticAssignment {
