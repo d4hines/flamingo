@@ -306,7 +306,17 @@ fn print_defined_fluent_relations(
 }
 
 fn print_output_relations(defined_fluents: DefinedFluentDeclarations) -> String {
-    unimplemented!();
+    let mut str = "#[rust=\"serde(untagged)\"]\n".to_owned();
+    let output_relations = defined_fluents
+        .into_iter()
+        .filter(|dec| dec.output)
+        .map(|dec| {
+            let name = dec.declaration.name;
+            format!("Out_{}{{{}: {}}}", name, name.to_lowercase(), name)
+        }).collect::<Vec<String>>();
+    let typedef = print_ddlog_enum("Output_Value", output_relations);
+    str.push_str(typedef.as_str());
+    str
 }
 
 fn print_output_rules(defined_fluents: DefinedFluentDeclarations) -> String {
@@ -506,14 +516,14 @@ relation Distance(_1: OID, _2: OID, _3: s64)"
         )
     }
 
-    //     #[test]
-    //     fn printing_output_relations() {
-    //         assert_eq!(
-    //             print_output_relations(make_defined_fluent_declarations()),
-    //             "#[rust=\"serde(untagged)\"]
-    // typedef Output_Value = Out_Side{side: Side}"
-    //         )
-    //     }
+        #[test]
+        fn printing_output_relations() {
+            assert_eq!(
+                print_output_relations(make_defined_fluent_declarations()),
+                "#[rust=\"serde(untagged)\"]
+typedef Output_Value = Out_Side{side: Side}"
+            )
+        }
 
     //     #[test]
     //     fn printing_output_rules() {
