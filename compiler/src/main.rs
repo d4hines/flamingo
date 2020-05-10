@@ -1,7 +1,31 @@
+#![allow(dead_code)]
+#[allow(unused_variables)]
 use std::env;
 use std::fs;
 
 type UpperTerm = String;
+
+trait PrintAsDDLog {
+    fn to_ddlog(&self, enums: &Enums) -> String;
+}
+
+impl PrintAsDDLog for UpperTerm {
+    fn to_ddlog(&self, enums: &Enums) -> String {
+        let values = enums
+            .into_iter()
+            .flat_map(|e| e.clone().terms.clone())
+            .collect::<Vec<String>>();
+        if values.contains(self) {
+            self.clone()
+        } else {
+            match self.as_str() {
+                "Booleans" => "bool".to_string(),
+                "Integers" => "s64".to_string(),
+                _ => "OID".to_string(),
+            }
+        }
+    }
+}
 
 enum Term {
     TermUpper(UpperTerm),
@@ -118,14 +142,21 @@ fn print_ddlog_enum(name: &str, mut members: Vec<String>) -> String {
     }
 }
 
-fn print_attribute_values(sorts: Sorts) -> String {
+fn print_attribute_values(enums: &Enums, sorts: Sorts) -> String {
     let rest = sorts
         .into_iter()
         .filter_map(|s| {
             s.attributes.map(|attributes| {
                 attributes
                     .into_iter()
-                    .map(|f| format!("Attr_{}{{{}: {}}}", f.name, f.name.to_lowercase(), f.ret))
+                    .map(|f| {
+                        format!(
+                            "Attr_{}{{{}: {}}}",
+                            f.name,
+                            f.name.to_lowercase(),
+                            f.ret.to_ddlog(enums)
+                        )
+                    })
                     .collect::<Vec<String>>()
             })
         })
@@ -134,7 +165,7 @@ fn print_attribute_values(sorts: Sorts) -> String {
     print_ddlog_enum("AttributeValue", rest)
 }
 
-fn print_attribute_relations(sorts: Sorts) -> String {
+fn print_attribute_relations(enums: &Enums, sorts: Sorts) -> String {
     sorts
         .into_iter()
         .filter_map(|s| {
@@ -147,7 +178,7 @@ fn print_attribute_relations(sorts: Sorts) -> String {
 {}(oid, x) :- Object(oid, _, attributes),
     Some{{Attr_{}{{var x}}}} = map_get(attributes, \"{}\").",
                             f.name,
-                            f.ret,
+                            f.ret.to_ddlog(enums),
                             f.name,
                             f.name,
                             f.name.to_lowercase()
@@ -175,11 +206,58 @@ fn print_links(sorts: Sorts) -> String {
 }
 
 fn print_static_declarations(statics: Statics) -> String {
-    unimplemented!();
+    statics
+        .into_iter()
+        .filter(|s| match s.params {
+            Some(_) => true,
+            None => false,
+        })
+        .map(|s| {
+            let mut param_str = match s.params {
+                Some(params) => {
+                    let mut v: Vec<String> = Vec::new();
+                    for i in 0..params.len() {
+                        let p = format!("_{}: {}", i + 1, params[i]);
+                        v.push(p);
+                    }
+                    v
+                }
+                None => Vec::new(),
+            };
+
+            let ret = format!("ret: {}", s.ret);
+            let all = if param_str.len() > 0 {
+                param_str.push(ret);
+                param_str.join(", ")
+            } else {
+                ret
+            };
+            format!("relation {}({})", s.name, all)
+        })
+        .collect::<Vec<String>>()
+        .join("\n\n")
 }
 
 fn print_basic_fluent_params(basic_fluents: FunctionDeclarations) -> String {
-    unimplemented!();
+    let types = basic_fluents
+        .into_iter()
+        .map(|f| {
+            let lower_case = f.name.to_lowercase();
+            let param_vec = match f.params {
+                Some(params) => {
+                    let mut v: Vec<String> = Vec::new();
+                    for i in 0..params.len() {
+                        let p = format!("{}_{}: {}", lower_case, i + 1, params[i]);
+                        v.push(p);
+                    }
+                    v
+                }
+                None => Vec::new(),
+            };
+            format!("Param_{}{{{}}}", f.name, param_vec.join(", "))
+        })
+        .collect();
+    print_ddlog_enum("FluentParam", types)
 }
 
 fn print_basic_fluent_values(basic_fluents: FunctionDeclarations) -> String {
@@ -235,12 +313,12 @@ mod tests {
                     FunctionDeclaration {
                         name: "Width".to_string(),
                         params: None,
-                        ret: "s64".to_string(),
+                        ret: "Integers".to_string(),
                     },
                     FunctionDeclaration {
                         name: "Height".to_string(),
                         params: None,
-                        ret: "s64".to_string(),
+                        ret: "Integers".to_string(),
                     },
                 ]),
             },
@@ -265,7 +343,7 @@ mod tests {
     #[test]
     fn printing_attribute_values() {
         assert_eq!(
-            print_attribute_values(make_sorts()),
+            print_attribute_values(&Vec::new(), make_sorts()),
             "typedef AttributeValue = Attr_Width{width: s64}
     | Attr_Height{height: s64}"
         );
@@ -274,7 +352,7 @@ mod tests {
     #[test]
     fn printing_attribute_relations() {
         assert_eq!(
-            print_attribute_relations(make_sorts()),
+            print_attribute_relations(&Vec::new(), make_sorts()),
             "relation Width(oid: OID, value: s64)
 Width(oid, x) :- Object(oid, _, attributes),
     Some{Attr_Width{var x}} = map_get(attributes, \"width\").
@@ -285,14 +363,14 @@ Height(oid, x) :- Object(oid, _, attributes),
         );
     }
 
-    #[test]
-    fn printing_links() {
-        assert_eq!(
-            print_links(make_sorts()),
-            "Link(Rectangles, Universe).
-Link(Windows, Rectangles)."
-        )
-    }
+    //     #[test]
+    //     fn printing_links() {
+    //         assert_eq!(
+    //             print_links(make_sorts()),
+    //             "Link(Rectangles, Universe).
+    // Link(Windows, Rectangles)."
+    //         )
+    //     }
 
     //     #[test]
     //     fn printing_static_declarations() {
@@ -310,7 +388,7 @@ Link(Windows, Rectangles)."
     //         ];
     //         assert_eq!(
     //             print_static_declarations(static_declarations),
-    //             "relation Opposite_Directions(_1: Directions, _ret: Directions)"
+    //             "relation Opposite_Directions(_1: Directions, ret: Directions)"
     //         )
     //     }
 
@@ -330,11 +408,11 @@ Link(Windows, Rectangles)."
     //     }
 
     //     #[test]
-    //     fn printing_basic_fluent_types() {
+    //     fn printing_basic_fluent_params() {
     //         assert_eq!(
     //             print_basic_fluent_params(make_basic_fluent_declarations()),
     //             "typedef FluentParam = Param_Grouped_With{grouped_with_1: OID, grouped_with_2: OID}
-    //     | Param_Moving{moving_1: OID}"
+    //         | Param_Moving{moving_1: OID}"
     //         )
     //     }
 
