@@ -1,4 +1,3 @@
-lalrpop_mod!(pub calculator); // synthesized by LALRPOP
 lalrpop_mod!(pub parse);
 
 #[cfg(test)]
@@ -8,33 +7,7 @@ mod tests {
     use std::fs;
 
     #[test]
-    fn calculator5() {
-        let expr = calculator::ExprsParser::new().parse("").unwrap();
-        assert_eq!(&format!("{:?}", expr), "[]");
-
-        let expr = calculator::ExprsParser::new()
-            .parse("22 * 44 + 66")
-            .unwrap();
-        assert_eq!(&format!("{:?}", expr), "[((22 * 44) + 66)]");
-
-        let expr = calculator::ExprsParser::new()
-            .parse("22 * 44 + 66,")
-            .unwrap();
-        assert_eq!(&format!("{:?}", expr), "[((22 * 44) + 66)]");
-
-        let expr = calculator::ExprsParser::new()
-            .parse("22 * 44 + 66, 13*3")
-            .unwrap();
-        assert_eq!(&format!("{:?}", expr), "[((22 * 44) + 66), (13 * 3)]");
-
-        let expr = calculator::ExprsParser::new()
-            .parse("22 * 44 + 66, 13*3,")
-            .unwrap();
-        assert_eq!(&format!("{:?}", expr), "[((22 * 44) + 66), (13 * 3)]");
-    }
-
-    #[test]
-    fn foo() {
+    fn text_to_ast() {
         let module =
             fs::read_to_string("./test/logic.alm").expect("Failed to read ./test/logic.alm");
         let parsed = parse::ALMModuleParser::new()
