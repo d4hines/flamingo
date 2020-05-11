@@ -35,7 +35,7 @@ fn main() {
         Ok(ast) => {
             let ddlog = ast.to_ddlog();
             let mut ddlog_path = alm_file.clone().trim_end_matches("alm").to_owned();
-            ddlog_path.push_str(".dl");
+            ddlog_path.push_str("dl");
 
             let msg = format!("Failed to create file {}", ddlog_path);
             let msg_str = msg.as_str();

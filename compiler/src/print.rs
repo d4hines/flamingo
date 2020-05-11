@@ -209,7 +209,7 @@ output relation Output(val: Output_Value)
             print_attribute_values(&self.enums, &self.sorts),
             print_attribute_relations(&self.enums, &self.sorts),
             print_links(&self.sorts),
-            print_static_declarations(&self.statics),
+            print_static_declarations(&self.enums, &self.statics),
             print_basic_fluent_params(&self.enums, &self.fluents.basic),
             print_basic_fluent_values(&self.enums, &self.fluents.basic),
             print_defined_fluent_relations(&self.enums, &self.fluents.defined),
@@ -315,7 +315,7 @@ fn print_links(sorts: &Sorts) -> String {
         .join("\n")
 }
 
-fn print_static_declarations(statics: &Statics) -> String {
+fn print_static_declarations(enums: &Enums, statics: &Statics) -> String {
     statics
         .into_iter()
         .filter(|s| match s.params {
@@ -335,7 +335,7 @@ fn print_static_declarations(statics: &Statics) -> String {
                 None => Vec::new(),
             };
 
-            let ret = format!("ret: {}", s.ret);
+            let ret = format!("ret: {}", s.ret.to_ddlog_type(enums));
             let all = if param_str.len() > 0 {
                 param_str.push(ret);
                 param_str.join(", ")
@@ -621,7 +621,10 @@ Link(Windows, Rectangles)."
     #[test]
     fn printing_static_declarations() {
         assert_eq!(
-            print_static_declarations(&make_static_declarations()),
+            print_static_declarations(&vec![Enum {
+            name: "Directions".to_string(),
+            terms: vec![],
+        }], &make_static_declarations()),
             "relation Opposite_Direction(_1: Directions, ret: Directions)"
         )
     }

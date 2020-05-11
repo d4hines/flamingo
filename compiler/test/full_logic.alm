@@ -27,7 +27,7 @@ module Window_demo
     statics
         Opposite_Direction : Directions -> Directions
         Opposite_Axis : Axes -> Axes
-        Axis : Direction -> Axes
+        Axis : Directions -> Axes
         Direction_Factor : Directions -> Integers
         Snapping_Threshold : Integers
         Corner_Snapping_Threshold : Integers
@@ -41,6 +41,7 @@ module Window_demo
             On_Same_Line : Rectangles x Rectangles x Axes -> Booleans
             Overlaps : Rectangles x Rectangles -> Booleans
             Attracts : Rectangles x Rectangles x Directions -> Booleans
+            Not_Snapped : Windows x Rectangles -> Booleans
             Snapped : Windows x Rectangles -> Booleans
             Snapped_To_Corner : Windows x Rectangles -> Booleans
             Distance : Windows x Rectangles x Integers -> Booleans
@@ -49,7 +50,7 @@ module Window_demo
             Nearest_Corner : Windows x Rectangles x Directions x Directions -> Booleans
             In_Snapped_Group : Windows -> Booleans
             Connected : Windows x Windows -> Booleans
-            Not_In_Singleton_Distance : Windows -> Booleans
+            Not_In_Singleton_Group : Windows -> Booleans
             output Group_Icon : Windows x Group_Icon -> Booleans
             output Final_Coordinate : Windows x Axes x Integers -> Booleans
             Final_Overlaps : Windows x Windows -> Booleans

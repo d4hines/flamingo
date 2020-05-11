@@ -106,9 +106,9 @@ relation Opposite_Direction(_1: Directions, ret: Directions)
 
 relation Opposite_Axis(_1: Axes, ret: Axes)
 
-relation Axis(_1: Direction, ret: Axes)
+relation Axis(_1: Directions, ret: Axes)
 
-relation Direction_Factor(_1: Directions, ret: Integers)
+relation Direction_Factor(_1: Directions, ret: s64)
 
 /////// Fluents //////////////////
 // Basic
@@ -125,6 +125,7 @@ relation Side(_1: OID, _2: Directions, _3: s64)
 relation On_Same_Line(_1: OID, _2: OID, _3: Axes)
 relation Overlaps(_1: OID, _2: OID)
 relation Attracts(_1: OID, _2: OID, _3: Directions)
+relation Not_Snapped(_1: OID, _2: OID)
 relation Snapped(_1: OID, _2: OID)
 relation Snapped_To_Corner(_1: OID, _2: OID)
 relation Distance(_1: OID, _2: OID, _3: s64)
@@ -133,7 +134,7 @@ relation Nearest_Side(_1: OID, _2: OID, _3: Directions)
 relation Nearest_Corner(_1: OID, _2: OID, _3: Directions, _4: Directions)
 relation In_Snapped_Group(_1: OID)
 relation Connected(_1: OID, _2: OID)
-relation Not_In_Singleton_Distance(_1: OID)
+relation Not_In_Singleton_Group(_1: OID)
 relation Group_Icon(_1: OID, _2: OID)
 relation Final_Coordinate(_1: OID, _2: Axes, _3: s64)
 relation Final_Overlaps(_1: OID, _2: OID)

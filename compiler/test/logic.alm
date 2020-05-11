@@ -17,7 +17,7 @@ module Window_demo
             output Side : Rectangles x Directions -> Booleans
             Distance : Rectangles x Rectangles x Integers -> Booleans
     axioms
-        Snapping_Threshold = 30
+        Snapping_Threshold = 30.
 
         Opposite_Direction(a) = b if
             Opposite_Direction(b) = a.
