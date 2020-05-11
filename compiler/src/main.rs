@@ -245,8 +245,7 @@ output relation OutFluent(params: FluentParam, ret: FluentValue)
 {}
 
 // Bundle of all the output fluents
-#[rust=\"serde(untagged)\"]
-typedef Output_Value = Out_Side{{side: Side}}
+{}
 output relation Output(val: Output_Value)
 
 Output(Out_Side{{side}}) :- Side[side].
@@ -273,7 +272,8 @@ Distance(a, b, min_d) :-
             print_static_declarations(&self.statics),
             print_basic_fluent_params(&self.enums, &self.fluents.basic),
             print_basic_fluent_values(&self.enums, &self.fluents.basic),
-            print_defined_fluent_relations(&self.enums, &self.fluents.defined)
+            print_defined_fluent_relations(&self.enums, &self.fluents.defined),
+            print_output_relations(&self.fluents.defined)
         );
         s.to_string()
     }
@@ -468,13 +468,13 @@ fn print_defined_fluent_relations(
         .join("\n")
 }
 
-fn print_output_relations(defined_fluents: DefinedFluentDeclarations) -> String {
+fn print_output_relations(defined_fluents: &DefinedFluentDeclarations) -> String {
     let mut str = "#[rust=\"serde(untagged)\"]\n".to_owned();
     let output_relations = defined_fluents
         .into_iter()
         .filter(|dec| dec.output)
         .map(|dec| {
-            let name = dec.declaration.name;
+            let name = &dec.declaration.name;
             format!("Out_{}{{{}: {}}}", name, name.to_lowercase(), name)
         })
         .collect::<Vec<String>>();
@@ -724,7 +724,7 @@ relation Distance(_1: OID, _2: OID, _3: s64)"
     #[test]
     fn printing_output_relations() {
         assert_eq!(
-            print_output_relations(make_defined_fluent_declarations()),
+            print_output_relations(&make_defined_fluent_declarations()),
             "#[rust=\"serde(untagged)\"]
 typedef Output_Value = Out_Side{side: Side}"
         )
@@ -887,7 +887,7 @@ typedef Output_Value = Out_Side{side: Side}"
                         },
                     },
                     DefinedFluentDeclaration {
-                        output: true,
+                        output: false,
                         declaration: FunctionDeclaration {
                             name: "Distance".to_string(),
                             params: Some(vec![
