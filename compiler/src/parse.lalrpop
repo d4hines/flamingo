@@ -66,14 +66,13 @@ pub ALMModule: ast::ALMModule = {
     "statics"
         <statics:FunctionDeclaration+>
     "fluents
-        basic
-            Grouped_With : Rectangles x Rectangles -> Booleans
-            Moving : Rectangles -> Booleans
-        defined
-            output Side : Rectangles x Directions -> Booleans.
-            Distance : Rectangles x Rectangles x Integers -> Booleans
-    axioms
-        Snapping_Threshold = 30
+        basic"
+            <basic:FunctionDeclaration+>
+        "defined"
+            "output Side : Rectangles x Directions -> Booleans.
+            Distance : Rectangles x Rectangles x Integers -> Booleans"
+    "axioms"
+        "Snapping_Threshold = 30
 
         Opposite_Direction(a) = b if
             Opposite_Direction(b) = a.
@@ -90,14 +89,12 @@ pub ALMModule: ast::ALMModule = {
         Moving(other) = false if
             Instance(other, Rectangles),
             -Grouped_With(other, _).
-
-
 " => ast::ALMModule {
         enums,
         sorts,
         statics,
         fluents: ast::Fluents {
-            basic: vec![],
+            basic,
             defined: vec![],
         },
         axioms: vec![],

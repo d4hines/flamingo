@@ -81,7 +81,18 @@ mod tests {
                     },
                 ],
                 fluents: Fluents {
-                    basic: vec![],
+                    basic: vec![
+                        FunctionDeclaration {
+                            name: "Grouped_With".to_string(),
+                            params: Some(vec!["Rectangles".to_string(), "Rectangles".to_string()]),
+                            ret: "Booleans".to_string(),
+                        },
+                        FunctionDeclaration {
+                            name: "Moving".to_string(),
+                            params: Some(vec!["Rectangles".to_string()]),
+                            ret: "Booleans".to_string(),
+                        },
+                    ],
                     defined: vec![],
                 },
                 axioms: vec![],
