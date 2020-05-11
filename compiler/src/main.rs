@@ -39,6 +39,7 @@ impl PrintAsDDLogType for UpperTerm {
 enum Term {
     TermUpper(UpperTerm),
     TermInteger(i64),
+    TermBoolean(bool),
 }
 
 impl PrintAsDDLogValue for Term {
@@ -46,6 +47,7 @@ impl PrintAsDDLogValue for Term {
         match self {
             Term::TermUpper(s) => s.clone(),
             Term::TermInteger(i) => i.to_string(),
+            Term::TermBoolean(b) => b.to_string(),
         }
     }
 }
@@ -112,10 +114,53 @@ struct FunctionAssignment {
     negated: bool,
 }
 
+#[derive(PartialEq)]
+enum FunctionAssignmentKinds {
+    InFluent,
+    OutFluent,
+    Normal,
+}
+
+impl FunctionAssignment {
+    fn to_ddlog_assignment(&self, kind: FunctionAssignmentKinds) -> String {
+        match kind {
+            FunctionAssignmentKinds::Normal => self.to_ddlog(),
+            FunctionAssignmentKinds::InFluent => {
+                let args = (&self.arguments)
+                    .into_iter()
+                    .map(|x| x.to_ddlog_value())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                let val = match &self.value {
+                    Some(e) => format!(", Value_{}{{{}}}", self.name, e.to_ddlog_value()),
+                    None => format!(", Value_{}{{true}}", self.name),
+                };
+                let negation = if self.negated {
+                    "not "
+                } else {
+                    ""
+                };
+                format!("{}InFluent(Param_{}{{{}}}{})", negation, self.name, args, val)
+            }
+            FunctionAssignmentKinds::OutFluent => {
+                let args = (&self.arguments)
+                    .into_iter()
+                    .map(|x| x.to_ddlog_value())
+                    .collect::<Vec<String>>()
+                    .join(", ");
+                let val = match &self.value {
+                    Some(e) => format!(", Value_{}{{{}}}", self.name, e.to_ddlog_value()),
+                    None => format!(", Value_{}{{{}}}", self.name, (!self.negated).to_string()),
+                };
+                format!("OutFluent(Param_{}{{{}}}{})", self.name, args, val)
+            }
+        }
+    }
+}
+
 impl PrintAsDDLog for FunctionAssignment {
     fn to_ddlog(&self) -> String {
-        let mut args = (&self
-            .arguments)
+        let mut args = (&self.arguments)
             .into_iter()
             .map(|e| e.to_ddlog_value())
             .collect::<Vec<String>>();
@@ -183,6 +228,11 @@ struct ALMModule {
 
 impl PrintAsDDLog for ALMModule {
     fn to_ddlog(&self) -> String {
+        let basic_fluent_names = (&self.fluents.basic)
+            .into_iter()
+            .map(|f| f.name.clone())
+            .collect::<Vec<String>>();
+
         let s = format!(
             "/////////// Static part of lib
 // Built-in functions
@@ -264,7 +314,12 @@ output relation Output(val: Output_Value)
             print_defined_fluent_relations(&self.enums, &self.fluents.defined),
             print_output_relations(&self.fluents.defined),
             print_output_rules(&self.fluents.defined),
-            print_axioms(&self.statics, &self.enums, &self.axioms)
+            print_axioms(
+                &self.statics,
+                &basic_fluent_names,
+                &self.enums,
+                &self.axioms
+            )
         );
         s.to_string()
     }
@@ -492,7 +547,12 @@ fn print_output_rules(defined_fluents: &DefinedFluentDeclarations) -> String {
         .join("\n")
 }
 
-fn print_axiom(statics: &Statics, enums: &Enums, axiom: &Axiom) -> String {
+fn print_axiom(
+    statics: &Statics,
+    basic_fluent_names: &Vec<String>,
+    enums: &Enums,
+    axiom: &Axiom,
+) -> String {
     match axiom {
         Axiom::StaticAssignment { name, value } => {
             let declaration = statics
@@ -508,22 +568,44 @@ fn print_axiom(statics: &Statics, enums: &Enums, axiom: &Axiom) -> String {
         }
         Axiom::Fact(f) => format!("{}.", f.to_ddlog()),
         Axiom::Rule { head, body } => {
+            let kind = if basic_fluent_names.contains(&head.name) {
+                FunctionAssignmentKinds::OutFluent
+            } else {
+                FunctionAssignmentKinds::Normal
+            };
+
+            let head_str = head.to_ddlog_assignment(kind);
+
             let body_clauses = body
                 .into_iter()
                 .map(|c| match c {
-                    RuleClause::ClauseFunctionAssignment(f) => f.to_ddlog(),
+                    RuleClause::ClauseFunctionAssignment(f) => {
+                        let kind = if basic_fluent_names.contains(&f.name) {
+                            FunctionAssignmentKinds::InFluent
+                        } else {
+                            FunctionAssignmentKinds::Normal
+                        };
+                        f.to_ddlog_assignment(kind)
+                    }
                     RuleClause::ClauseRawDDLog(raw) => raw.to_ddlog(),
                 })
                 .collect::<Vec<String>>()
                 .join(",\n    ");
-            format!("{} :-\n    {}.", head.to_ddlog(), body_clauses)
+
+            format!("{} :-\n    {}.", head_str, body_clauses)
         }
     }
 }
 
-fn print_axioms(statics: &Statics, enums: &Enums, axioms: &Axioms) -> String {
-    axioms.into_iter()
-        .map(|a| print_axiom(statics, enums, a))
+fn print_axioms(
+    statics: &Statics,
+    basic_fluent_names: &Vec<String>,
+    enums: &Enums,
+    axioms: &Axioms,
+) -> String {
+    axioms
+        .into_iter()
+        .map(|a| print_axiom(statics, basic_fluent_names, enums, a))
         .collect::<Vec<String>>()
         .join("\n\n")
 }
@@ -742,7 +824,12 @@ typedef Output_Value = Out_Side{side: Side}"
             value: 30,
         };
         assert_eq!(
-            print_axiom(&make_static_declarations(), &Vec::new(), &static_assignment),
+            print_axiom(
+                &make_static_declarations(),
+                &Vec::new(),
+                &Vec::new(),
+                &static_assignment
+            ),
             "function static_Snapping_Threshold(): s64 { 30 }"
         )
     }
@@ -760,7 +847,7 @@ typedef Output_Value = Out_Side{side: Side}"
             value: None,
         });
         assert_eq!(
-            print_axiom(&Vec::new(), &Vec::new(), &fact),
+            print_axiom(&Vec::new(), &Vec::new(), &Vec::new(), &fact),
             "Distance(1, 2, 10)."
         )
     }
@@ -819,7 +906,7 @@ typedef Output_Value = Out_Side{side: Side}"
         };
 
         assert_eq!(
-            print_axiom(&Vec::new(), &Vec::new(), &rule),
+            print_axiom(&Vec::new(), &Vec::new(), &Vec::new(), &rule),
             "Distance(a, b, min_d) :-
     Instance(a, Rectangles),
     Instance(b, Rectangles),
@@ -870,11 +957,18 @@ typedef Output_Value = Out_Side{side: Side}"
                 },
             ],
             fluents: Fluents {
-                basic: vec![FunctionDeclaration {
-                    name: "Grouped_With".to_string(),
-                    params: Some(vec!["Rectangles".to_string(), "Rectangles".to_string()]),
-                    ret: "Booleans".to_string(),
-                }],
+                basic: vec![
+                    FunctionDeclaration {
+                        name: "Grouped_With".to_string(),
+                        params: Some(vec!["Rectangles".to_string(), "Rectangles".to_string()]),
+                        ret: "Booleans".to_string(),
+                    },
+                    FunctionDeclaration {
+                        name: "Moving".to_string(),
+                        params: Some(vec!["Rectangles".to_string()]),
+                        ret: "Booleans".to_string(),
+                    },
+                ],
                 defined: vec![
                     DefinedFluentDeclaration {
                         output: true,
@@ -979,6 +1073,36 @@ typedef Output_Value = Out_Side{side: Side}"
                         RuleClause::ClauseRawDDLog(
                             "var min_d = Aggregate((a, b), group_min(b))".to_string(),
                         ),
+                    ],
+                },
+                Axiom::Rule {
+                    head: FunctionAssignment {
+                        negated: true,
+                        name: "Moving".to_string(),
+                        arguments: vec![Expression::ExpressionVariable("other".to_string())],
+                        value: None,
+                    },
+                    body: vec![
+                        RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                            negated: false,
+                            name: "Instance".to_string(),
+                            arguments: vec![
+                                Expression::ExpressionVariable("other".to_string()),
+                                Expression::ExpressionTerm(Term::TermUpper(
+                                    "Rectangles".to_string(),
+                                )),
+                            ],
+                            value: None,
+                        }),
+                        RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                            negated: true,
+                            name: "Grouped_With".to_string(),
+                            arguments: vec![
+                                Expression::ExpressionVariable("other".to_string()),
+                                Expression::ExpressionVariable("_".to_string()),
+                            ],
+                            value: None,
+                        }),
                     ],
                 },
             ],

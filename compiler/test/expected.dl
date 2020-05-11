@@ -61,8 +61,10 @@ relation Opposite_Direction(_1: Directions, ret: Directions)
 /////// Fluents //////////////////
 // Basic
 typedef FluentParam = Param_Grouped_With{grouped_with_1: OID, grouped_with_2: OID}
+    | Param_Moving{moving_1: OID}
 
 typedef FluentValue = Value_Grouped_With{grouped_with_ret: bool}
+    | Value_Moving{moving_ret: bool}
 
 // Defined
 relation Side(_1: OID, _2: Directions)
@@ -89,3 +91,7 @@ Distance(a, b, min_d) :-
     not Overlaps(a, b),
     Opposite_Direction(dir, dir__prime),
     var min_d = Aggregate((a, b), group_min(b)).
+
+OutFluent(Param_Moving{other}, Value_Moving{false}) :-
+    Instance(other, Rectangles),
+    not InFluent(Param_Grouped_With{other, _}, Value_Grouped_With{true}).

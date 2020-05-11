@@ -12,6 +12,7 @@ module Window_demo
     fluents
         basic
             Grouped_With : Rectangles x Rectangles -> Booleans
+            Moving : Rectangles -> Booleans
         defined
             output Side : Rectangles x Directions -> Booleans.
             Distance : Rectangles x Rectangles x Integers -> Booleans
@@ -23,10 +24,15 @@ module Window_demo
         
         Opposite_Direction(DLeft) = DRight.
         
-        Distance(a, b, min_d) :-
+        Distance(a, b, min_d) if
             Instance(a, Rectangles),
             Instance(b, Rectangles),
             -Overlaps(a, b),
             Opposite_Direction(dir) = dir',
             #ddlog var min_d = Aggregate((a, b), group_min(b)).
+        
+        Moving(other) = false if
+            Instance(other, Rectangles),
+            -Grouped_With(other, _).
+
 
