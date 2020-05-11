@@ -7,7 +7,7 @@ module Window_demo
                 Width : Integers
                 Height : Integers.
     statics
-        Opposite_Direction : Directions -> Directions.
+        Opposite_Direction : Directions -> Directions
         Snapping_Threshold : Integers
     fluents
         basic

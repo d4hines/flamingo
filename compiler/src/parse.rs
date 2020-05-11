@@ -37,7 +37,9 @@ mod tests {
     fn foo() {
         let module =
             fs::read_to_string("./test/logic.alm").expect("Failed to read ./test/logic.alm");
-        let parsed = parse::ALMModuleParser::new().parse(module.as_str()).unwrap();
+        let parsed = parse::ALMModuleParser::new()
+            .parse(module.as_str())
+            .unwrap();
         assert_eq!(
             parsed,
             ALMModule {
@@ -50,12 +52,11 @@ mod tests {
                         "DRight".to_string(),
                     ],
                 }],
-                sorts: vec![
-                    Sort {
-                        name: "Rectangles".to_string(),
-                        parent_sorts: vec!["Universe".to_string()],
-                        attributes: Some(vec![
-                            FunctionDeclaration {
+                sorts: vec![Sort {
+                    name: "Rectangles".to_string(),
+                    parent_sorts: vec!["Universe".to_string()],
+                    attributes: Some(vec![
+                        FunctionDeclaration {
                             name: "Width".to_string(),
                             params: None,
                             ret: "Integers".to_string(),
@@ -64,10 +65,21 @@ mod tests {
                             name: "Height".to_string(),
                             params: None,
                             ret: "Integers".to_string(),
-                        }])
+                        }
+                    ])
+                },],
+                statics: vec![
+                    FunctionDeclaration {
+                        name: "Opposite_Direction".to_string(),
+                        params: Some(vec!["Directions".to_string()]),
+                        ret: "Directions".to_string(),
+                    },
+                    FunctionDeclaration {
+                        name: "Snapping_Threshold".to_string(),
+                        params: None,
+                        ret: "Integers".to_string(),
                     },
                 ],
-                statics: vec![],
                 fluents: Fluents {
                     basic: vec![],
                     defined: vec![],

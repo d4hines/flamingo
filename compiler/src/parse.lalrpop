@@ -31,6 +31,11 @@ FunctionDeclaration : ast::FunctionDeclaration = {
         name,
         params: None,
         ret
+    },
+    <name:UpperTerm> ":" <params:Params> "->" <ret:UpperTerm> => ast::FunctionDeclaration {
+        name,
+        params: Some(params),
+        ret
     }
 }
 
@@ -59,8 +64,7 @@ pub ALMModule: ast::ALMModule = {
     "sorts"
         <sorts:Sort+>
     "statics"
-        "Opposite_Direction : Directions -> Directions.
-        Snapping_Threshold : Integers"
+        <statics:FunctionDeclaration+>
     "fluents
         basic
             Grouped_With : Rectangles x Rectangles -> Booleans
@@ -91,7 +95,7 @@ pub ALMModule: ast::ALMModule = {
 " => ast::ALMModule {
         enums,
         sorts,
-        statics: vec![],
+        statics,
         fluents: ast::Fluents {
             basic: vec![],
             defined: vec![],
