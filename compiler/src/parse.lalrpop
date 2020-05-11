@@ -73,7 +73,7 @@ Term: ast::Term = {
 }
 
 Variable: ast::Variable = {
-    r"[a-z][a-z0-9_]*'*" => String::from_str(<>).unwrap()
+    r"[a-z_][a-z0-9_]*'*" => String::from_str(<>).unwrap()
 }
 
 Expression: ast::Expression = {

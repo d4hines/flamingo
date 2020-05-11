@@ -116,16 +116,16 @@ module Window_demo
             Side(a, dir, e1),
             Side(b, dir', e2),
             Opposite_Direction(dir, dir'),
-            #ddlog var d = abs(e1 - e2),
-            #ddlog var min_d = Aggregate((a, b), group_min(d)).
+            #ddlog { var d = abs(e1 - e2) },
+            #ddlog { var min_d = Aggregate((a, b), group_min(d)) }.
 
         Distance(a, b, min_d) if
             Instance(a, Windows),
             Instance(b, Monitors),
             Side(a, dir, e1),
             Side(b, dir, e2),
-            #ddlog var d = abs(e1 - e2),
-            #ddlog var min_d = Aggregate((a, b), group_min(d)).
+            #ddlog { var d = abs(e1 - e2) },
+            #ddlog { var min_d = Aggregate((a, b), group_min(d)) }.
 
         Distance(a, b, d)  if Distance(b, a, d).
 
@@ -139,11 +139,11 @@ module Window_demo
             Side(a, dir', b1),
             Side(a, dir'', a2),
             Side(b, dir'', b2),
-            #ddlog abs(a1 - b1) < abs(a2 - b2).
+            #ddlog { abs(a1 - b1) < abs(a2 - b2) }.
         
         Closest(a, b) if
             Distance(a, b, d),
-            #ddlog var min_d = Aggregate((a, b), group_min(d)).
+            #ddlog { var min_d = Aggregate((a, b), group_min(d)) }.
         
         Not_Snapped(a, b) if
             Moving(a),
@@ -165,7 +165,7 @@ module Window_demo
             Nearest_Corner(a, b, dir, dir'),
             Side(a, dir', side_a),
             Side(b, dir', side_b),
-            #ddlog abs(side_a - side_b) < static_Corner_Snapping_Threshold(),
+            #ddlog { abs(side_a - side_b) < static_Corner_Snapping_Threshold() },
             Opposite_Direction(dir') = opposite_dir,
             -Nearest_Corner(a, b, opposite_dir, _).
 
@@ -177,7 +177,7 @@ module Window_demo
             Axis(dir) = ax,
             Coordinate(a, ax) = coord,
             Direction_Factor(dir, f),
-            #ddlog var new_coord = coord + d * f.
+            #ddlog { var new_coord = coord + d * f }.
 
         Final_Coordinate(a, ax', new_coord) if
             Grouped_With(b, a),
@@ -190,7 +190,7 @@ module Window_demo
             Coordinate(a, ax') = coord,
             Side(b, dir', side_b),
             Side(c, dir', side_c),
-            #ddlog var new_coord = coord + (side_c - side_b).
+            #ddlog { var new_coord = coord + (side_c - side_b) }.
 
          Final_Coordinate(a, ax, coord) if
             Coordinate(a, ax) = coord,
@@ -211,7 +211,7 @@ module Window_demo
 
         Attracts(a, b, dir) if
             Distance(a, b, d),
-            #ddlog d < static_Snapping_Threshold(),
+            #ddlog { d < static_Snapping_Threshold() },
             Closest(b, a),
             Nearest_Side(a, b, dir),
             -Grouped_With(a, b).
@@ -226,7 +226,7 @@ module Window_demo
             Final_Side(a, dir, e1),
             Final_Side(b, dir', e2),
             Opposite_Direction(dir, dir'),
-            #ddlog e1 - e2 == 0.
+            #ddlog { e1 - e2 == 0 }.
 
         Final_Side(rectangle, DLeft, value) if
             Final_Coordinate(rectangle, X, value).
@@ -237,12 +237,12 @@ module Window_demo
         Final_Side(rectangle, DRight, r_value) if
             Final_Side(rectangle, DLeft, l_value),
             Width(rectangle, w),
-            #ddlog var r_value = l_value + w.
+            #ddlog { var r_value = l_value + w }.
 
         Final_Side(rectangle, DBottom, b_value) if
             Final_Side(rectangle, DTop, t_value),
             Height(rectangle, h),
-            #ddlog var b_value = t_value + h.
+            #ddlog { var b_value = t_value + h }.
 
         Final_On_Same_Line(a, b, axis) if
             Final_Side(a, dir, a1),
