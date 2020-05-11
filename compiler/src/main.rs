@@ -248,7 +248,7 @@ output relation OutFluent(params: FluentParam, ret: FluentValue)
 {}
 output relation Output(val: Output_Value)
 
-Output(Out_Side{{side}}) :- Side[side].
+{}
 
 ///////////// Axioms ///////////////
 function static_Corner_Snapping_Threshold(): s64 {{
@@ -273,7 +273,8 @@ Distance(a, b, min_d) :-
             print_basic_fluent_params(&self.enums, &self.fluents.basic),
             print_basic_fluent_values(&self.enums, &self.fluents.basic),
             print_defined_fluent_relations(&self.enums, &self.fluents.defined),
-            print_output_relations(&self.fluents.defined)
+            print_output_relations(&self.fluents.defined),
+            print_output_rules(&self.fluents.defined)
         );
         s.to_string()
     }
@@ -483,12 +484,12 @@ fn print_output_relations(defined_fluents: &DefinedFluentDeclarations) -> String
     str
 }
 
-fn print_output_rules(defined_fluents: DefinedFluentDeclarations) -> String {
+fn print_output_rules(defined_fluents: &DefinedFluentDeclarations) -> String {
     defined_fluents
         .into_iter()
         .filter(|dec| dec.output)
         .map(|dec| {
-            let name = dec.declaration.name;
+            let name = &dec.declaration.name;
             format!(
                 "Output(Out_{}{{{}}}) :- {}[{}].",
                 name,
@@ -733,7 +734,7 @@ typedef Output_Value = Out_Side{side: Side}"
     #[test]
     fn printing_output_rules() {
         assert_eq!(
-            print_output_rules(make_defined_fluent_declarations()),
+            print_output_rules(&make_defined_fluent_declarations()),
             "Output(Out_Side{side}) :- Side[side]."
         )
     }
