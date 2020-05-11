@@ -1,0 +1,125 @@
+use std::str::FromStr;
+use crate::ast;
+use crate::ast::{Expr, Opcode};
+
+grammar;
+
+UpperTerm: ast::UpperTerm = {
+    r"[A-Z][A-Za-z_]*" => String::from_str(<>).unwrap()
+}
+
+Enum: ast::Enum = {
+    <name:UpperTerm> "::" "{" <terms:Comma<UpperTerm>> "}" => ast::Enum {
+        name,
+        terms,
+    }
+}
+
+Sort: ast::Sort = {
+    "Rectangles :: Universe
+            attributes
+                Width : Integers
+                Height : Integers" => ast::Sort {
+                    name: "Rectangles".to_string(),
+                    parent_sorts: vec!["Universe".to_string()],
+                    attributes: Some(vec![
+                        ast::FunctionDeclaration {
+                            name: "Width".to_string(),
+                            params: None,
+                            ret: "Integers".to_string(),
+                        },
+                        ast::FunctionDeclaration {
+                            name: "Height".to_string(),
+                            params: None,
+                            ret: "Integers".to_string(),
+                        }])
+                }
+}
+
+pub ALMModule: ast::ALMModule = {
+    "module Window_demo"
+    "enums"
+        <enums:Enum+>
+    "sorts"
+        <sorts:Sort+>
+    "statics
+        Opposite_Direction : Directions -> Directions.
+        Snapping_Threshold : Integers
+    fluents
+        basic
+            Grouped_With : Rectangles x Rectangles -> Booleans
+            Moving : Rectangles -> Booleans
+        defined
+            output Side : Rectangles x Directions -> Booleans.
+            Distance : Rectangles x Rectangles x Integers -> Booleans
+    axioms
+        Snapping_Threshold = 30
+
+        Opposite_Direction(a) = b if
+            Opposite_Direction(b) = a.
+        
+        Opposite_Direction(DLeft) = DRight.
+        
+        Distance(a, b, min_d) if
+            Instance(a, Rectangles),
+            Instance(b, Rectangles),
+            -Overlaps(a, b),
+            Opposite_Direction(dir) = dir',
+            #ddlog var min_d = Aggregate((a, b), group_min(b)).
+        
+        Moving(other) = false if
+            Instance(other, Rectangles),
+            -Grouped_With(other, _).
+
+
+" => ast::ALMModule {
+        enums,
+        sorts,
+        statics: vec![],
+        fluents: ast::Fluents {
+            basic: vec![],
+            defined: vec![],
+        },
+        axioms: vec![],
+    }
+}
+
+pub Exprs = Comma<Expr>;
+
+Comma<T>: Vec<T> = { // (0)
+    <v:(<T> ",")*> <e:T?> => match e { // (1)
+        None=> v,
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            v
+        }
+    }
+};
+
+Tier<Op,NextTier>: Box<Expr> = {
+    Tier<Op,NextTier> Op NextTier => Box::new(Expr::Op(<>)),
+    NextTier
+};
+
+Expr = Tier<ExprOp, Factor>;
+Factor = Tier<FactorOp, Term>;
+
+ExprOp: Opcode = { // (3)
+    "+" => Opcode::Add,
+    "-" => Opcode::Sub,
+};
+
+FactorOp: Opcode = {
+    "*" => Opcode::Mul,
+    "/" => Opcode::Div,
+};
+
+Term: Box<Expr> = {
+    Num => Box::new(Expr::Number(<>)),
+    "(" <Expr> ")"
+};
+
+Num: i32 = {
+    r"[0-9]+" => i32::from_str(<>).unwrap()
+};
