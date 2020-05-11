@@ -1,11 +1,11 @@
 module Window_demo
     enums
-        Directions :: { DTop, DLeft, DBottom, DRight }
+        Directions :: { DTop, DLeft, DBottom, DRight }.
     sorts
         Rectangles :: Universe
             attributes
                 Width : Integers
-                Height : Integers
+                Height : Integers.
     statics
         Opposite_Direction : Directions -> Directions.
         Snapping_Threshold : Integers
