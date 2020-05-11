@@ -1,8 +1,12 @@
+#[macro_use]
+extern crate lalrpop_util;
+
 use std::env;
 use std::fs;
 
 mod ast;
 mod print;
+mod parse;
 
 fn main() {
     let alm_file = env::args()
