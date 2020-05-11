@@ -226,9 +226,8 @@ output relation OutFluent(params: FluentParam, ret: FluentValue)
 {}
 
 #[rust=\"serde(untagged)\"]
-typedef AttributeValue = Attr_Width{{width: s64}}
-    | Attr_Height{{height: s64}} 
-    
+{}
+
 relation Width(oid: OID, value: s64)
 Width(oid, x) :- Object(oid, _, attributes),
     Some{{Attr_Width{{var x}}}} = map_get(attributes, \"width\").
@@ -276,7 +275,8 @@ Distance(a, b, min_d) :-
     var min_d = Aggregate((a, b), group_min(b)).
 ",
             self.enums.to_ddlog(),
-            print_nodes(&self.sorts)
+            print_nodes(&self.sorts),
+            print_attribute_values(&self.enums, &self.sorts)
         );
         s.to_string()
     }
@@ -284,7 +284,10 @@ Distance(a, b, min_d) :-
 
 fn print_nodes(sorts: &Sorts) -> String {
     let defaults = vec!["Universe".to_string(), "Actions".to_string()];
-    let rest = sorts.into_iter().map(|s| s.name.clone()).collect::<Vec<String>>();
+    let rest = sorts
+        .into_iter()
+        .map(|s| s.name.clone())
+        .collect::<Vec<String>>();
     let all = vec![defaults, rest].concat();
     print_ddlog_enum("Node", all)
 }
@@ -305,11 +308,11 @@ fn print_ddlog_enum(name: &str, mut members: Vec<String>) -> String {
     }
 }
 
-fn print_attribute_values(enums: &Enums, sorts: Sorts) -> String {
+fn print_attribute_values(enums: &Enums, sorts: &Sorts) -> String {
     let rest = sorts
         .into_iter()
         .filter_map(|s| {
-            s.attributes.map(|attributes| {
+            s.attributes.clone().map(|attributes| {
                 attributes
                     .into_iter()
                     .map(|f| {
@@ -328,11 +331,11 @@ fn print_attribute_values(enums: &Enums, sorts: Sorts) -> String {
     print_ddlog_enum("AttributeValue", rest)
 }
 
-fn print_attribute_relations(enums: &Enums, sorts: Sorts) -> String {
+fn print_attribute_relations(enums: &Enums, sorts: &Sorts) -> String {
     sorts
         .into_iter()
         .filter_map(|s| {
-            s.attributes.map(|attributes| {
+            s.attributes.clone().map(|attributes| {
                 attributes
                     .into_iter()
                     .map(|f| {
@@ -594,7 +597,7 @@ mod tests {
     #[test]
     fn printing_attribute_values() {
         assert_eq!(
-            print_attribute_values(&Vec::new(), make_sorts()),
+            print_attribute_values(&Vec::new(), &make_sorts()),
             "typedef AttributeValue = Attr_Width{width: s64}
     | Attr_Height{height: s64}"
         );
@@ -603,7 +606,7 @@ mod tests {
     #[test]
     fn printing_attribute_relations() {
         assert_eq!(
-            print_attribute_relations(&Vec::new(), make_sorts()),
+            print_attribute_relations(&Vec::new(), &make_sorts()),
             "relation Width(oid: OID, value: s64)
 Width(oid, x) :- Object(oid, _, attributes),
     Some{Attr_Width{var x}} = map_get(attributes, \"width\").

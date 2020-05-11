@@ -42,8 +42,8 @@ typedef Node = Universe
 
 #[rust="serde(untagged)"]
 typedef AttributeValue = Attr_Width{width: s64}
-    | Attr_Height{height: s64} 
-    
+    | Attr_Height{height: s64}
+
 relation Width(oid: OID, value: s64)
 Width(oid, x) :- Object(oid, _, attributes),
     Some{Attr_Width{var x}} = map_get(attributes, "width").
