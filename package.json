@@ -1,6 +1,6 @@
 {
   "name": "flamingo-logic",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "An ALM comiler and runtime for reactive systems.",
   "main": "lib/index.js",
   "author": "Daniel Hines <d4hines@gmail.com>",
