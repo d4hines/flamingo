@@ -1,6 +1,5 @@
 use std::str::FromStr;
 use crate::ast;
-use crate::ast::{Expr, Opcode};
 
 grammar;
 
@@ -67,6 +66,69 @@ DefinedFluentDeclaration: ast::DefinedFluentDeclaration = {
     }
 }
 
+Term: ast::Term = {
+    <UpperTerm> => ast::Term::TermUpper(<>),
+    <Num> => ast::Term::TermInteger(<>),
+    r"#true|#false" => ast::Term::TermBoolean(<> == "#true")
+}
+
+Variable: ast::Variable = {
+    r"[a-z_]+'*" => String::from_str(<>).unwrap()
+}
+
+Expression: ast::Expression = {
+    <Term> => ast::Expression::ExpressionTerm(<>),
+    <Variable> => ast::Expression::ExpressionVariable(<>)
+}
+
+FunctionAssignment: ast::FunctionAssignment = {
+    <name:UpperTerm> "(" <arguments:Comma<Expression>>") = " <value:Expression> => ast::FunctionAssignment {
+        name,
+        arguments,
+        value: Some(value),
+        negated: false,
+    },
+    <name:UpperTerm>"("<arguments:Comma<Expression>>")" => ast::FunctionAssignment {
+        name,
+        arguments,
+        value: None,
+        negated: false
+    },
+    "-"<name:UpperTerm>"("<arguments:Comma<Expression>>")" => ast::FunctionAssignment {
+        name,
+        arguments,
+        value: None,
+        negated: true
+    }
+}
+
+RawDDLog: ast::RawDDLog = {
+    r"#ddlog \{ .* \}" => {
+       let s =  String::from_str(<>).unwrap();
+        s.trim_start_matches("#ddlog {")
+            .trim_end_matches("}")
+            .trim()
+            .to_string()
+    }
+}
+
+RuleClause: ast::RuleClause = {
+    <FunctionAssignment> => ast::RuleClause::ClauseFunctionAssignment(<>),
+   <RawDDLog> => ast::RuleClause::ClauseRawDDLog(<>)
+}
+
+Axiom: ast::Axiom = {
+    <name:UpperTerm> "=" <value:Num> => ast::Axiom::StaticAssignment {
+        name,
+        value
+    },
+    <FunctionAssignment>"." => ast::Axiom::Fact(<>),
+    <head:FunctionAssignment> "if" <body:Comma<RuleClause>> "." => ast::Axiom::Rule {
+        head,
+        body
+    }
+}
+
 pub ALMModule: ast::ALMModule = {
     "module Window_demo"
     "enums"
@@ -81,24 +143,8 @@ pub ALMModule: ast::ALMModule = {
         "defined"
             <defined:DefinedFluentDeclaration+>
     "axioms"
-        "Snapping_Threshold = 30
-
-        Opposite_Direction(a) = b if
-            Opposite_Direction(b) = a.
-        
-        Opposite_Direction(DLeft) = DRight.
-        
-        Distance(a, b, min_d) if
-            Instance(a, Rectangles),
-            Instance(b, Rectangles),
-            -Overlaps(a, b),
-            Opposite_Direction(dir) = dir',
-            #ddlog var min_d = Aggregate((a, b), group_min(b)).
-        
-        Moving(other) = false if
-            Instance(other, Rectangles),
-            -Grouped_With(other, _).
-" => ast::ALMModule {
+        <axioms:Axiom+>
+    => ast::ALMModule {
         enums,
         sorts,
         statics,
@@ -106,11 +152,9 @@ pub ALMModule: ast::ALMModule = {
             basic,
             defined,
         },
-        axioms: vec![],
+        axioms
     }
 }
-
-pub Exprs = Comma<Expr>;
 
 Comma<T>: Vec<T> = { // (0)
     <v:(<T> ",")*> <e:T?> => match e { // (1)
@@ -123,29 +167,6 @@ Comma<T>: Vec<T> = { // (0)
     }
 };
 
-Tier<Op,NextTier>: Box<Expr> = {
-    Tier<Op,NextTier> Op NextTier => Box::new(Expr::Op(<>)),
-    NextTier
-};
-
-Expr = Tier<ExprOp, Factor>;
-Factor = Tier<FactorOp, Term>;
-
-ExprOp: Opcode = { // (3)
-    "+" => Opcode::Add,
-    "-" => Opcode::Sub,
-};
-
-FactorOp: Opcode = {
-    "*" => Opcode::Mul,
-    "/" => Opcode::Div,
-};
-
-Term: Box<Expr> = {
-    Num => Box::new(Expr::Number(<>)),
-    "(" <Expr> ")"
-};
-
-Num: i32 = {
-    r"[0-9]+" => i32::from_str(<>).unwrap()
+Num: i64 = {
+    r"[0-9]+" => i64::from_str(<>).unwrap()
 };

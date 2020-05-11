@@ -119,7 +119,120 @@ mod tests {
                         },
                     ],
                 },
-                axioms: vec![],
+                axioms: vec![
+                    Axiom::StaticAssignment {
+                        name: "Snapping_Threshold".to_string(),
+                        value: 30,
+                    },
+                    Axiom::Rule {
+                        head: FunctionAssignment {
+                            negated: false,
+                            name: "Opposite_Direction".to_string(),
+                            arguments: vec![Expression::ExpressionVariable("a".to_string())],
+                            value: Some(Expression::ExpressionVariable("b".to_string())),
+                        },
+                        body: vec![RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                            negated: false,
+                            name: "Opposite_Direction".to_string(),
+                            arguments: vec![Expression::ExpressionVariable("b".to_string())],
+                            value: Some(Expression::ExpressionVariable("a".to_string())),
+                        })],
+                    },
+                    Axiom::Fact(FunctionAssignment {
+                        negated: false,
+                        name: "Opposite_Direction".to_string(),
+                        arguments: vec![Expression::ExpressionTerm(Term::TermUpper(
+                            "DLeft".to_string(),
+                        ))],
+                        value: Some(Expression::ExpressionTerm(Term::TermUpper(
+                            "DRight".to_string(),
+                        ))),
+                    }),
+                    Axiom::Rule {
+                        head: FunctionAssignment {
+                            negated: false,
+                            name: "Distance".to_string(),
+                            arguments: vec![
+                                Expression::ExpressionVariable("a".to_string()),
+                                Expression::ExpressionVariable("b".to_string()),
+                                Expression::ExpressionVariable("min_d".to_string()),
+                            ],
+                            value: None,
+                        },
+                        body: vec![
+                            RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                                negated: false,
+                                name: "Instance".to_string(),
+                                arguments: vec![
+                                    Expression::ExpressionVariable("a".to_string()),
+                                    Expression::ExpressionTerm(Term::TermUpper(
+                                        "Rectangles".to_string(),
+                                    )),
+                                ],
+                                value: None,
+                            }),
+                            RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                                negated: false,
+                                name: "Instance".to_string(),
+                                arguments: vec![
+                                    Expression::ExpressionVariable("b".to_string()),
+                                    Expression::ExpressionTerm(Term::TermUpper(
+                                        "Rectangles".to_string(),
+                                    )),
+                                ],
+                                value: None,
+                            }),
+                            RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                                negated: true,
+                                name: "Overlaps".to_string(),
+                                arguments: vec![
+                                    Expression::ExpressionVariable("a".to_string()),
+                                    Expression::ExpressionVariable("b".to_string()),
+                                ],
+                                value: None,
+                            }),
+                            RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                                negated: false,
+                                name: "Opposite_Direction".to_string(),
+                                arguments: vec![Expression::ExpressionVariable("dir".to_string())],
+                                value: Some(Expression::ExpressionVariable("dir'".to_string())),
+                            }),
+                            RuleClause::ClauseRawDDLog(
+                                "var min_d = Aggregate((a, b), group_min(b))".to_string(),
+                            ),
+                        ],
+                    },
+                    Axiom::Rule {
+                        head: FunctionAssignment {
+                            negated: true,
+                            name: "Moving".to_string(),
+                            arguments: vec![Expression::ExpressionVariable("other".to_string())],
+                            value: None,
+                        },
+                        body: vec![
+                            RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                                negated: false,
+                                name: "Instance".to_string(),
+                                arguments: vec![
+                                    Expression::ExpressionVariable("other".to_string()),
+                                    Expression::ExpressionTerm(Term::TermUpper(
+                                        "Rectangles".to_string(),
+                                    )),
+                                ],
+                                value: None,
+                            }),
+                            RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                                negated: true,
+                                name: "Grouped_With".to_string(),
+                                arguments: vec![
+                                    Expression::ExpressionVariable("other".to_string()),
+                                    Expression::ExpressionVariable("_".to_string()),
+                                ],
+                                value: None,
+                            }),
+                        ],
+                    },
+                ],
             }
         );
     }

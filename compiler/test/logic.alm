@@ -29,9 +29,9 @@ module Window_demo
             Instance(b, Rectangles),
             -Overlaps(a, b),
             Opposite_Direction(dir) = dir',
-            #ddlog var min_d = Aggregate((a, b), group_min(b)).
+            #ddlog { var min_d = Aggregate((a, b), group_min(b)) }.
         
-        Moving(other) = false if
+        -Moving(other) if
             Instance(other, Rectangles),
             -Grouped_With(other, _).
 
