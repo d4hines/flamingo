@@ -1,6 +1,7 @@
 module Window_demo
     enums
         Directions :: { DTop, DLeft, DBottom, DRight }.
+        Group_Icons :: { NoIcon, Form, Disband }.
     sorts
         Rectangles :: Universe
             attributes

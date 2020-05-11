@@ -487,7 +487,7 @@ fn print_axiom(
                             FunctionAssignmentKinds::Normal
                         };
                         f.to_ddlog_assignment(kind)
-                    },
+                    }
                     RuleClause::ClauseComparison(left, comparator, right) => {
                         let comp_str = match comparator {
                             Comparator::Equal => "=",
@@ -495,10 +495,15 @@ fn print_axiom(
                             Comparator::LessThan => "<",
                             Comparator::GreaterThan => ">",
                             Comparator::LessThanOrEqualTo => "<=",
-                            Comparator::GreaterThanOrEqualTo => ">="
+                            Comparator::GreaterThanOrEqualTo => ">=",
                         };
-                        format!("{} {} {}", left.to_ddlog_value(), comp_str, right.to_ddlog_value())
-                    },
+                        format!(
+                            "{} {} {}",
+                            left.to_ddlog_value(),
+                            comp_str,
+                            right.to_ddlog_value()
+                        )
+                    }
                     RuleClause::ClauseRawDDLog(raw) => raw.to_ddlog(),
                 })
                 .collect::<Vec<String>>()
@@ -621,10 +626,13 @@ Link(Windows, Rectangles)."
     #[test]
     fn printing_static_declarations() {
         assert_eq!(
-            print_static_declarations(&vec![Enum {
-            name: "Directions".to_string(),
-            terms: vec![],
-        }], &make_static_declarations()),
+            print_static_declarations(
+                &vec![Enum {
+                    name: "Directions".to_string(),
+                    terms: vec![],
+                }],
+                &make_static_declarations()
+            ),
             "relation Opposite_Direction(_1: Directions, ret: Directions)"
         )
     }
@@ -823,15 +831,25 @@ typedef Output_Value = Out_Side{side: Side}"
     #[test]
     fn print_alm_module() {
         let module = ALMModule {
-            enums: vec![Enum {
-                name: "Directions".to_string(),
-                terms: vec![
-                    "DTop".to_string(),
-                    "DLeft".to_string(),
-                    "DBottom".to_string(),
-                    "DRight".to_string(),
-                ],
-            }],
+            enums: vec![
+                Enum {
+                    name: "Directions".to_string(),
+                    terms: vec![
+                        "DTop".to_string(),
+                        "DLeft".to_string(),
+                        "DBottom".to_string(),
+                        "DRight".to_string(),
+                    ],
+                },
+                Enum {
+                    name: "Group_Icons".to_string(),
+                    terms: vec![
+                        "NoIcon".to_string(),
+                        "Form".to_string(),
+                        "Disband".to_string(),
+                    ],
+                },
+            ],
             sorts: vec![Sort {
                 name: "Rectangles".to_string(),
                 parent_sorts: vec!["Universe".to_string()],
@@ -894,6 +912,17 @@ typedef Output_Value = Out_Side{side: Side}"
                             ret: "Booleans".to_string(),
                         },
                     },
+                    DefinedFluentDeclaration {
+                        output: false,
+                        declaration: FunctionDeclaration {
+                            name: "Group_Icon".to_string(),
+                            params: Some(vec![
+                                "Windows".to_string(),
+                                "Group_Icons".to_string(),
+                            ]),
+                            ret: "Booleans".to_string(),
+                        },
+                    }
                 ],
             },
             axioms: vec![

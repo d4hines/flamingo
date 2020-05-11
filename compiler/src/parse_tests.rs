@@ -16,15 +16,25 @@ mod tests {
         assert_eq!(
             parsed,
             ALMModule {
-                enums: vec![Enum {
-                    name: "Directions".to_string(),
-                    terms: vec![
-                        "DTop".to_string(),
-                        "DLeft".to_string(),
-                        "DBottom".to_string(),
-                        "DRight".to_string(),
-                    ],
-                }],
+                enums: vec![
+                    Enum {
+                        name: "Directions".to_string(),
+                        terms: vec![
+                            "DTop".to_string(),
+                            "DLeft".to_string(),
+                            "DBottom".to_string(),
+                            "DRight".to_string(),
+                        ],
+                    },
+                    Enum {
+                        name: "Group_Icons".to_string(),
+                        terms: vec![
+                            "NoIcon".to_string(),
+                            "Form".to_string(),
+                            "Disband".to_string(),
+                        ],
+                    }
+                ],
                 sorts: vec![Sort {
                     name: "Rectangles".to_string(),
                     parent_sorts: vec!["Universe".to_string()],

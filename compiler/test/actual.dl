@@ -34,6 +34,7 @@ output relation OutFluent(params: FluentParam, ret: FluentValue)
 
 // Sort Literals
 typedef Directions = DTop | DLeft | DBottom | DRight
+typedef Group_Icons = NoIcon | Form | Disband
 
 // Nodes of the hierarchy
 typedef Node = Universe
@@ -69,6 +70,7 @@ typedef FluentValue = Value_Grouped_With{grouped_with_ret: bool}
 // Defined
 relation Side(_1: OID, _2: Directions)
 relation Distance(_1: OID, _2: OID, _3: s64)
+relation Group_Icon(_1: OID, _2: Group_Icons)
 
 // Bundle of all the output fluents
 #[rust="serde(untagged)"]
