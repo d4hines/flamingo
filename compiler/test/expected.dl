@@ -65,9 +65,8 @@ typedef FluentParam = Param_Grouped_With{grouped_with_1: OID, grouped_with_2: OI
 typedef FluentValue = Value_Grouped_With{grouped_with_ret: bool}
 
 // Defined
-relation Side(_1: OID, _2: Axes, _3: s64)
+relation Side(_1: OID, _2: Directions)
 relation Distance(_1: OID, _2: OID, _3: s64)
-relation Overlaps(_1: OID, _2: OID)
 
 // Bundle of all the output fluents
 #[rust="serde(untagged)"]

@@ -114,9 +114,8 @@ struct FunctionAssignment {
 
 impl PrintAsDDLog for FunctionAssignment {
     fn to_ddlog(&self) -> String {
-        let mut args = self
-            .arguments
-            .clone()
+        let mut args = (&self
+            .arguments)
             .into_iter()
             .map(|e| e.to_ddlog_value())
             .collect::<Vec<String>>();
@@ -243,9 +242,7 @@ output relation OutFluent(params: FluentParam, ret: FluentValue)
 {}
 
 // Defined
-relation Side(_1: OID, _2: Axes, _3: s64)
-relation Distance(_1: OID, _2: OID, _3: s64)
-relation Overlaps(_1: OID, _2: OID)
+{}
 
 // Bundle of all the output fluents
 #[rust=\"serde(untagged)\"]
@@ -276,6 +273,7 @@ Distance(a, b, min_d) :-
             print_static_declarations(&self.statics),
             print_basic_fluent_params(&self.enums, &self.fluents.basic),
             print_basic_fluent_values(&self.enums, &self.fluents.basic),
+            print_defined_fluent_relations(&self.enums, &self.fluents.defined)
         );
         s.to_string()
     }
@@ -447,13 +445,13 @@ fn print_basic_fluent_values(enums: &Enums, basic_fluents: &FunctionDeclarations
 
 fn print_defined_fluent_relations(
     enums: &Enums,
-    defined_fluents: DefinedFluentDeclarations,
+    defined_fluents: &DefinedFluentDeclarations,
 ) -> String {
     defined_fluents
         .into_iter()
         .map(|dec| {
-            let d = dec.declaration;
-            let param_vec = match d.params {
+            let d = &dec.declaration;
+            let param_vec = match &d.params {
                 Some(params) => {
                     let mut v: Vec<String> = Vec::new();
                     for i in 0..params.len() {
@@ -717,7 +715,7 @@ Link(Windows, Rectangles)."
             terms: vec!["X".to_string(), "Y".to_string()],
         }];
         assert_eq!(
-            print_defined_fluent_relations(&enums, make_defined_fluent_declarations()),
+            print_defined_fluent_relations(&enums, &make_defined_fluent_declarations()),
             "relation Side(_1: OID, _2: Axes, _3: s64)
 relation Distance(_1: OID, _2: OID, _3: s64)"
         )
