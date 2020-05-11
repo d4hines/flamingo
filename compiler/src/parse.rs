@@ -93,7 +93,31 @@ mod tests {
                             ret: "Booleans".to_string(),
                         },
                     ],
-                    defined: vec![],
+                    defined: vec![
+                        DefinedFluentDeclaration {
+                            output: true,
+                            declaration: FunctionDeclaration {
+                                name: "Side".to_string(),
+                                params: Some(vec![
+                                    "Rectangles".to_string(),
+                                    "Directions".to_string()
+                                ]),
+                                ret: "Booleans".to_string(),
+                            },
+                        },
+                        DefinedFluentDeclaration {
+                            output: false,
+                            declaration: FunctionDeclaration {
+                                name: "Distance".to_string(),
+                                params: Some(vec![
+                                    "Rectangles".to_string(),
+                                    "Rectangles".to_string(),
+                                    "Integers".to_string(),
+                                ]),
+                                ret: "Booleans".to_string(),
+                            },
+                        },
+                    ],
                 },
                 axioms: vec![],
             }

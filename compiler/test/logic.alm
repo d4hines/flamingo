@@ -14,7 +14,7 @@ module Window_demo
             Grouped_With : Rectangles x Rectangles -> Booleans
             Moving : Rectangles -> Booleans
         defined
-            output Side : Rectangles x Directions -> Booleans.
+            output Side : Rectangles x Directions -> Booleans
             Distance : Rectangles x Rectangles x Integers -> Booleans
     axioms
         Snapping_Threshold = 30

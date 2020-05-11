@@ -56,6 +56,16 @@ Sort: ast::Sort = {
         }
 }
 
+DefinedFluentDeclaration: ast::DefinedFluentDeclaration = {
+    "output" <FunctionDeclaration> => ast::DefinedFluentDeclaration {
+        output: true,
+        declaration: <>
+    },
+    <FunctionDeclaration> => ast::DefinedFluentDeclaration {
+        output: false,
+        declaration: <>
+    }
+}
 
 pub ALMModule: ast::ALMModule = {
     "module Window_demo"
@@ -69,8 +79,7 @@ pub ALMModule: ast::ALMModule = {
         basic"
             <basic:FunctionDeclaration+>
         "defined"
-            "output Side : Rectangles x Directions -> Booleans.
-            Distance : Rectangles x Rectangles x Integers -> Booleans"
+            <defined:DefinedFluentDeclaration+>
     "axioms"
         "Snapping_Threshold = 30
 
@@ -95,7 +104,7 @@ pub ALMModule: ast::ALMModule = {
         statics,
         fluents: ast::Fluents {
             basic,
-            defined: vec![],
+            defined,
         },
         axioms: vec![],
     }
