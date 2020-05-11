@@ -228,25 +228,19 @@ output relation OutFluent(params: FluentParam, ret: FluentValue)
 #[rust=\"serde(untagged)\"]
 {}
 
-relation Width(oid: OID, value: s64)
-Width(oid, x) :- Object(oid, _, attributes),
-    Some{{Attr_Width{{var x}}}} = map_get(attributes, \"width\").
-
-relation Height(oid: OID, value: s64)
-Height(oid, x) :- Object(oid, _, attributes),
-    Some{{Attr_Height{{var x}}}} = map_get(attributes, \"height\").
+{}
 
 // Encode Hiearchy facts
-Link(Rectangles, Universe).
+{}
 
 // Statics
-relation Opposite_Direction(_1: Axes, ret: Axes)
+{}
 
 /////// Fluents //////////////////
 // Basic
-typedef FluentParam = Param_Grouped_With{{grouped_with_1: OID, grouped_with_2: OID}}
+{}
 
-typedef FluentValue = Value_Grouped_With{{grouped_with_ret: bool}}
+{}
 
 // Defined
 relation Side(_1: OID, _2: Axes, _3: s64)
@@ -276,7 +270,12 @@ Distance(a, b, min_d) :-
 ",
             self.enums.to_ddlog(),
             print_nodes(&self.sorts),
-            print_attribute_values(&self.enums, &self.sorts)
+            print_attribute_values(&self.enums, &self.sorts),
+            print_attribute_relations(&self.enums, &self.sorts),
+            print_links(&self.sorts),
+            print_static_declarations(&self.statics),
+            print_basic_fluent_params(&self.enums, &self.fluents.basic),
+            print_basic_fluent_values(&self.enums, &self.fluents.basic),
         );
         s.to_string()
     }
@@ -371,7 +370,7 @@ fn print_links(sorts: &Sorts) -> String {
         .join("\n")
 }
 
-fn print_static_declarations(statics: Statics) -> String {
+fn print_static_declarations(statics: &Statics) -> String {
     statics
         .into_iter()
         .filter(|s| match s.params {
@@ -379,7 +378,7 @@ fn print_static_declarations(statics: Statics) -> String {
             None => false,
         })
         .map(|s| {
-            let mut param_str = match s.params {
+            let mut param_str = match s.params.clone() {
                 Some(params) => {
                     let mut v: Vec<String> = Vec::new();
                     for i in 0..params.len() {
@@ -404,12 +403,12 @@ fn print_static_declarations(statics: Statics) -> String {
         .join("\n\n")
 }
 
-fn print_basic_fluent_params(enums: &Enums, basic_fluents: FunctionDeclarations) -> String {
+fn print_basic_fluent_params(enums: &Enums, basic_fluents: &FunctionDeclarations) -> String {
     let types = basic_fluents
         .into_iter()
         .map(|f| {
             let lower_case = f.name.to_lowercase();
-            let param_vec = match f.params {
+            let param_vec = match f.params.clone() {
                 Some(params) => {
                     let mut v: Vec<String> = Vec::new();
                     for i in 0..params.len() {
@@ -431,7 +430,7 @@ fn print_basic_fluent_params(enums: &Enums, basic_fluents: FunctionDeclarations)
     print_ddlog_enum("FluentParam", types)
 }
 
-fn print_basic_fluent_values(enums: &Enums, basic_fluents: FunctionDeclarations) -> String {
+fn print_basic_fluent_values(enums: &Enums, basic_fluents: &FunctionDeclarations) -> String {
     let types = basic_fluents
         .into_iter()
         .map(|f| {
@@ -643,7 +642,7 @@ Link(Windows, Rectangles)."
     #[test]
     fn printing_static_declarations() {
         assert_eq!(
-            print_static_declarations(make_static_declarations()),
+            print_static_declarations(&make_static_declarations()),
             "relation Opposite_Direction(_1: Directions, ret: Directions)"
         )
     }
@@ -666,7 +665,7 @@ Link(Windows, Rectangles)."
     #[test]
     fn printing_basic_fluent_params() {
         assert_eq!(
-            print_basic_fluent_params(&Vec::new(), make_basic_fluent_declarations()),
+            print_basic_fluent_params(&Vec::new(), &make_basic_fluent_declarations()),
             "typedef FluentParam = Param_Grouped_With{grouped_with_1: OID, grouped_with_2: OID}
     | Param_Moving{moving_1: OID}"
         )
@@ -675,7 +674,7 @@ Link(Windows, Rectangles)."
     #[test]
     fn printing_basic_fluent_values() {
         assert_eq!(
-            print_basic_fluent_values(&Vec::new(), make_basic_fluent_declarations()),
+            print_basic_fluent_values(&Vec::new(), &make_basic_fluent_declarations()),
             "typedef FluentValue = Value_Grouped_With{grouped_with_ret: bool}
     | Value_Moving{moving_ret: bool}"
                 .to_string(),

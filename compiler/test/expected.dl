@@ -56,7 +56,7 @@ Height(oid, x) :- Object(oid, _, attributes),
 Link(Rectangles, Universe).
 
 // Statics
-relation Opposite_Direction(_1: Axes, ret: Axes)
+relation Opposite_Direction(_1: Directions, ret: Directions)
 
 /////// Fluents //////////////////
 // Basic
