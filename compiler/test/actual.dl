@@ -76,11 +76,12 @@ output relation Output(val: Output_Value)
 Output(Out_Side{side}) :- Side[side].
 
 ///////////// Axioms ///////////////
-function static_Corner_Snapping_Threshold(): s64 {
-    30
-}
+function static_Snapping_Threshold(): s64 { 30 }
 
-Distance(1, 2, 10).
+Opposite_Direction(a, b) :-
+    Opposite_Direction(b, a).
+
+Opposite_Direction(DLeft, DRight).
 
 Distance(a, b, min_d) :-
     Instance(a, Rectangles),

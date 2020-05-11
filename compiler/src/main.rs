@@ -251,18 +251,7 @@ output relation Output(val: Output_Value)
 {}
 
 ///////////// Axioms ///////////////
-function static_Corner_Snapping_Threshold(): s64 {{
-    30
-}}
-
-Distance(1, 2, 10).
-
-Distance(a, b, min_d) :-
-    Instance(a, Rectangles),
-    Instance(b, Rectangles),
-    not Overlaps(a, b),
-    Opposite_Direction(dir, dir__prime),
-    var min_d = Aggregate((a, b), group_min(b)).
+{}
 ",
             self.enums.to_ddlog(),
             print_nodes(&self.sorts),
@@ -274,7 +263,8 @@ Distance(a, b, min_d) :-
             print_basic_fluent_values(&self.enums, &self.fluents.basic),
             print_defined_fluent_relations(&self.enums, &self.fluents.defined),
             print_output_relations(&self.fluents.defined),
-            print_output_rules(&self.fluents.defined)
+            print_output_rules(&self.fluents.defined),
+            print_axioms(&self.statics, &self.enums, &self.axioms)
         );
         s.to_string()
     }
@@ -502,12 +492,12 @@ fn print_output_rules(defined_fluents: &DefinedFluentDeclarations) -> String {
         .join("\n")
 }
 
-fn print_axiom(statics: &Statics, enums: &Enums, axiom: Axiom) -> String {
+fn print_axiom(statics: &Statics, enums: &Enums, axiom: &Axiom) -> String {
     match axiom {
         Axiom::StaticAssignment { name, value } => {
             let declaration = statics
                 .into_iter()
-                .find(|s| s.name == name)
+                .find(|s| &s.name == name)
                 .expect(format!("Unknown static function \"{}\"", name).as_str());
             format!(
                 "function static_{}(): {} {{ {} }}",
@@ -529,6 +519,13 @@ fn print_axiom(statics: &Statics, enums: &Enums, axiom: Axiom) -> String {
             format!("{} :-\n    {}.", head.to_ddlog(), body_clauses)
         }
     }
+}
+
+fn print_axioms(statics: &Statics, enums: &Enums, axioms: &Axioms) -> String {
+    axioms.into_iter()
+        .map(|a| print_axiom(statics, enums, a))
+        .collect::<Vec<String>>()
+        .join("\n\n")
 }
 
 fn main() {
@@ -745,7 +742,7 @@ typedef Output_Value = Out_Side{side: Side}"
             value: 30,
         };
         assert_eq!(
-            print_axiom(&make_static_declarations(), &Vec::new(), static_assignment),
+            print_axiom(&make_static_declarations(), &Vec::new(), &static_assignment),
             "function static_Snapping_Threshold(): s64 { 30 }"
         )
     }
@@ -763,7 +760,7 @@ typedef Output_Value = Out_Side{side: Side}"
             value: None,
         });
         assert_eq!(
-            print_axiom(&Vec::new(), &Vec::new(), fact),
+            print_axiom(&Vec::new(), &Vec::new(), &fact),
             "Distance(1, 2, 10)."
         )
     }
@@ -822,7 +819,7 @@ typedef Output_Value = Out_Side{side: Side}"
         };
 
         assert_eq!(
-            print_axiom(&Vec::new(), &Vec::new(), rule),
+            print_axiom(&Vec::new(), &Vec::new(), &rule),
             "Distance(a, b, min_d) :-
     Instance(a, Rectangles),
     Instance(b, Rectangles),
