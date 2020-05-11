@@ -124,7 +124,7 @@ impl PrintAsDDLog for FunctionAssignment {
             Some(e) => args.push(e.to_ddlog_value()),
             None => {}
         };
-        let negation = if self.negated {"not "} else {""};
+        let negation = if self.negated { "not " } else { "" };
         format!("{}{}({})", negation, self.name, args.join(", "))
     }
 }
@@ -161,6 +161,15 @@ enum Axiom {
 }
 
 type Enums = Vec<Enum>;
+impl PrintAsDDLog for Enums {
+    fn to_ddlog(&self) -> String {
+        self.into_iter()
+            .map(|e| format!("typedef {} = {}", e.name, e.terms.join(" | ")))
+            .collect::<Vec<String>>()
+            .join("\n")
+    }
+}
+
 type Sorts = Vec<Sort>;
 type Statics = FunctionDeclarations;
 type Axioms = Vec<Axiom>;
@@ -173,17 +182,109 @@ struct ALMModule {
     axioms: Axioms,
 }
 
-fn print_enum(enums: Enums) -> String {
-    enums
-        .into_iter()
-        .map(|e| format!("typedef {} = {}", e.name, e.terms.join(" | ")))
-        .collect::<Vec<String>>()
-        .join("\n")
+impl PrintAsDDLog for ALMModule {
+    fn to_ddlog(&self) -> String {
+        let s = format!(
+            "/////////// Static part of lib
+// Built-in functions
+function abs(n: s64): s64 {{
+   if (n > 0) {{
+       n
+   }} else {{
+       n * -1
+   }}
+}}
+
+// Built-in Object ID type
+typedef OID = s64
+
+input relation Object(oid: OID, sort: Node, attributes: Map<string, AttributeValue>)
+primary key (x) x.oid
+
+// Links together nodes in the sort hiearchy
+relation Link(_1: Node, _2: Node)
+Link(Actions, Universe).
+
+relation Is_A(_1: OID, _2: Node)
+Is_A(obj, sort) :- Object(obj, sort, _).
+
+relation Instance(_1: OID, _2: Node)
+Instance(obj, sort) :- Is_A(obj, sort).
+Instance(obj, sort1) :- Instance(obj, sort2), Link(sort2, sort1).
+
+input relation InFluent(params: FluentParam, ret: FluentValue)
+primary key (x) x.params
+
+output relation OutFluent(params: FluentParam, ret: FluentValue)
+
+//////////// Dynamic Part of Lib
+
+// Sort Literals
+{}
+
+// Nodes of the hierarchy
+{}
+
+#[rust=\"serde(untagged)\"]
+typedef AttributeValue = Attr_Width{{width: s64}}
+    | Attr_Height{{height: s64}} 
+    
+relation Width(oid: OID, value: s64)
+Width(oid, x) :- Object(oid, _, attributes),
+    Some{{Attr_Width{{var x}}}} = map_get(attributes, \"width\").
+
+relation Height(oid: OID, value: s64)
+Height(oid, x) :- Object(oid, _, attributes),
+    Some{{Attr_Height{{var x}}}} = map_get(attributes, \"height\").
+
+// Encode Hiearchy facts
+Link(Rectangles, Universe).
+
+// Statics
+relation Opposite_Direction(_1: Axes, ret: Axes)
+
+/////// Fluents //////////////////
+// Basic
+typedef FluentParam = Param_Grouped_With{{grouped_with_1: OID, grouped_with_2: OID}}
+
+typedef FluentValue = Value_Grouped_With{{grouped_with_ret: bool}}
+
+// Defined
+relation Side(_1: OID, _2: Axes, _3: s64)
+relation Distance(_1: OID, _2: OID, _3: s64)
+relation Overlaps(_1: OID, _2: OID)
+
+// Bundle of all the output fluents
+#[rust=\"serde(untagged)\"]
+typedef Output_Value = Out_Side{{side: Side}}
+output relation Output(val: Output_Value)
+
+Output(Out_Side{{side}}) :- Side[side].
+
+///////////// Axioms ///////////////
+function static_Corner_Snapping_Threshold(): s64 {{
+    30
+}}
+
+Distance(1, 2, 10).
+
+Distance(a, b, min_d) :-
+    Instance(a, Rectangles),
+    Instance(b, Rectangles),
+    not Overlaps(a, b),
+    Opposite_Direction(dir, dir__prime),
+    var min_d = Aggregate((a, b), group_min(b)).
+",
+            self.enums.to_ddlog(),
+            print_nodes(&self.sorts)
+        );
+        s.to_string()
+    }
 }
 
-fn print_nodes(sorts: Sorts) -> String {
+fn print_nodes(sorts: &Sorts) -> String {
     let defaults = vec!["Universe".to_string(), "Actions".to_string()];
-    let rest = sorts.into_iter().map(|s| s.name).collect::<Vec<String>>();
+    let rest = sorts.into_iter().map(|s| s.name.clone()).collect::<Vec<String>>();
     let all = vec![defaults, rest].concat();
     print_ddlog_enum("Node", all)
 }
@@ -254,7 +355,7 @@ fn print_attribute_relations(enums: &Enums, sorts: Sorts) -> String {
         .join("\n\n")
 }
 
-fn print_links(sorts: Sorts) -> String {
+fn print_links(sorts: &Sorts) -> String {
     sorts
         .into_iter()
         .flat_map(|s| {
@@ -400,8 +501,6 @@ fn print_output_rules(defined_fluents: DefinedFluentDeclarations) -> String {
         .join("\n")
 }
 
-
-
 fn print_axiom(statics: &Statics, enums: &Enums, axiom: Axiom) -> String {
     match axiom {
         Axiom::StaticAssignment { name, value } => {
@@ -417,13 +516,14 @@ fn print_axiom(statics: &Statics, enums: &Enums, axiom: Axiom) -> String {
             )
         }
         Axiom::Fact(f) => format!("{}.", f.to_ddlog()),
-        Axiom::Rule{head, body} => {
+        Axiom::Rule { head, body } => {
             let body_clauses = body
-            .into_iter()
+                .into_iter()
                 .map(|c| match c {
                     RuleClause::ClauseFunctionAssignment(f) => f.to_ddlog(),
-                    RuleClause::ClauseRawDDLog(raw) => raw.to_ddlog()
-                }).collect::<Vec<String>>()
+                    RuleClause::ClauseRawDDLog(raw) => raw.to_ddlog(),
+                })
+                .collect::<Vec<String>>()
                 .join(",\n    ");
             format!("{} :-\n    {}.", head.to_ddlog(), body_clauses)
         }
@@ -452,7 +552,7 @@ mod tests {
             name: "Axes".to_string(),
             terms: vec!["X".to_string(), "Y".to_string()],
         }];
-        assert_eq!(print_enum(enums), "typedef Axes = X | Y")
+        assert_eq!(enums.to_ddlog(), "typedef Axes = X | Y")
     }
 
     fn make_sorts() -> Sorts {
@@ -484,7 +584,7 @@ mod tests {
     #[test]
     fn printing_nodes() {
         assert_eq!(
-            print_nodes(make_sorts()),
+            print_nodes(&make_sorts()),
             "typedef Node = Universe
     | Actions
     | Rectangles
@@ -517,7 +617,7 @@ Height(oid, x) :- Object(oid, _, attributes),
     #[test]
     fn printing_links() {
         assert_eq!(
-            print_links(make_sorts()),
+            print_links(&make_sorts()),
             "Link(Rectangles, Universe).
 Link(Windows, Rectangles)."
         )
@@ -526,7 +626,7 @@ Link(Windows, Rectangles)."
     fn make_static_declarations() -> Statics {
         vec![
             FunctionDeclaration {
-                name: "Opposite_Directions".to_string(),
+                name: "Opposite_Direction".to_string(),
                 params: Some(vec!["Directions".to_string()]),
                 ret: "Directions".to_string(),
             },
@@ -541,7 +641,7 @@ Link(Windows, Rectangles)."
     fn printing_static_declarations() {
         assert_eq!(
             print_static_declarations(make_static_declarations()),
-            "relation Opposite_Directions(_1: Directions, ret: Directions)"
+            "relation Opposite_Direction(_1: Directions, ret: Directions)"
         )
     }
 
@@ -729,5 +829,167 @@ typedef Output_Value = Out_Side{side: Side}"
     Opposite_Direction(dir, dir__prime),
     var min_d = Aggregate((a, b), group_min(b))."
         )
+    }
+
+    #[test]
+    fn print_alm_module() {
+        let module = ALMModule {
+            enums: vec![Enum {
+                name: "Directions".to_string(),
+                terms: vec![
+                    "DTop".to_string(),
+                    "DLeft".to_string(),
+                    "DBottom".to_string(),
+                    "DRight".to_string(),
+                ],
+            }],
+            sorts: vec![Sort {
+                name: "Rectangles".to_string(),
+                parent_sorts: vec!["Universe".to_string()],
+                attributes: Some(vec![
+                    FunctionDeclaration {
+                        name: "Width".to_string(),
+                        params: None,
+                        ret: "Integers".to_string(),
+                    },
+                    FunctionDeclaration {
+                        name: "Height".to_string(),
+                        params: None,
+                        ret: "Integers".to_string(),
+                    },
+                ]),
+            }],
+            statics: vec![
+                FunctionDeclaration {
+                    name: "Opposite_Direction".to_string(),
+                    params: Some(vec!["Directions".to_string()]),
+                    ret: "Directions".to_string(),
+                },
+                FunctionDeclaration {
+                    name: "Snapping_Threshold".to_string(),
+                    params: None,
+                    ret: "Integers".to_string(),
+                },
+            ],
+            fluents: Fluents {
+                basic: vec![FunctionDeclaration {
+                    name: "Grouped_With".to_string(),
+                    params: Some(vec!["Rectangles".to_string(), "Rectangles".to_string()]),
+                    ret: "Booleans".to_string(),
+                }],
+                defined: vec![
+                    DefinedFluentDeclaration {
+                        output: true,
+                        declaration: FunctionDeclaration {
+                            name: "Side".to_string(),
+                            params: Some(vec!["Rectangles".to_string(), "Directions".to_string()]),
+                            ret: "Booleans".to_string(),
+                        },
+                    },
+                    DefinedFluentDeclaration {
+                        output: true,
+                        declaration: FunctionDeclaration {
+                            name: "Distance".to_string(),
+                            params: Some(vec![
+                                "Rectangles".to_string(),
+                                "Rectangles".to_string(),
+                                "Integers".to_string(),
+                            ]),
+                            ret: "Booleans".to_string(),
+                        },
+                    },
+                ],
+            },
+            axioms: vec![
+                Axiom::StaticAssignment {
+                    name: "Snapping_Threshold".to_string(),
+                    value: 30,
+                },
+                Axiom::Rule {
+                    head: FunctionAssignment {
+                        negated: false,
+                        name: "Opposite_Direction".to_string(),
+                        arguments: vec![Expression::ExpressionVariable("a".to_string())],
+                        value: Some(Expression::ExpressionVariable("b".to_string())),
+                    },
+                    body: vec![RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                        negated: false,
+                        name: "Opposite_Direction".to_string(),
+                        arguments: vec![Expression::ExpressionVariable("b".to_string())],
+                        value: Some(Expression::ExpressionVariable("a".to_string())),
+                    })],
+                },
+                Axiom::Fact(FunctionAssignment {
+                    negated: false,
+                    name: "Opposite_Direction".to_string(),
+                    arguments: vec![Expression::ExpressionTerm(Term::TermUpper(
+                        "DLeft".to_string(),
+                    ))],
+                    value: Some(Expression::ExpressionTerm(Term::TermUpper(
+                        "DRight".to_string(),
+                    ))),
+                }),
+                Axiom::Rule {
+                    head: FunctionAssignment {
+                        negated: false,
+                        name: "Distance".to_string(),
+                        arguments: vec![
+                            Expression::ExpressionVariable("a".to_string()),
+                            Expression::ExpressionVariable("b".to_string()),
+                            Expression::ExpressionVariable("min_d".to_string()),
+                        ],
+                        value: None,
+                    },
+                    body: vec![
+                        RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                            negated: false,
+                            name: "Instance".to_string(),
+                            arguments: vec![
+                                Expression::ExpressionVariable("a".to_string()),
+                                Expression::ExpressionTerm(Term::TermUpper(
+                                    "Rectangles".to_string(),
+                                )),
+                            ],
+                            value: None,
+                        }),
+                        RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                            negated: false,
+                            name: "Instance".to_string(),
+                            arguments: vec![
+                                Expression::ExpressionVariable("b".to_string()),
+                                Expression::ExpressionTerm(Term::TermUpper(
+                                    "Rectangles".to_string(),
+                                )),
+                            ],
+                            value: None,
+                        }),
+                        RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                            negated: true,
+                            name: "Overlaps".to_string(),
+                            arguments: vec![
+                                Expression::ExpressionVariable("a".to_string()),
+                                Expression::ExpressionVariable("b".to_string()),
+                            ],
+                            value: None,
+                        }),
+                        RuleClause::ClauseFunctionAssignment(FunctionAssignment {
+                            negated: false,
+                            name: "Opposite_Direction".to_string(),
+                            arguments: vec![Expression::ExpressionVariable("dir".to_string())],
+                            value: Some(Expression::ExpressionVariable("dir'".to_string())),
+                        }),
+                        RuleClause::ClauseRawDDLog(
+                            "var min_d = Aggregate((a, b), group_min(b))".to_string(),
+                        ),
+                    ],
+                },
+            ],
+        };
+
+        let expected =
+            fs::read_to_string("./test/expected.dl").expect("Failed to read ./test/expected.dl");
+        let actual = module.to_ddlog();
+        fs::write("./test/actual.dl", actual.clone()).expect("Failed to write ./test/actual.dl");
+        assert_eq!(actual, expected);
     }
 }

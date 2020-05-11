@@ -1,6 +1,6 @@
 module Window_demo
     enums
-        Axes :: { X, Y }
+        Directions :: { DTop, DLeft, DBottom, DRight }
     sorts
         Rectangles :: Universe
             attributes
@@ -13,16 +13,15 @@ module Window_demo
         basic
             Grouped_With : Rectangles x Rectangles -> Booleans
         defined
-            output Side : Rectangles x Axes -> Booleans.
-            Distance : Rectangles x Rectangles -> Integers
+            output Side : Rectangles x Directions -> Booleans.
+            Distance : Rectangles x Rectangles x Integers -> Booleans
     axioms
         Snapping_Threshold = 30
-        Corner_Snapping_Threshold = 30.
 
         Opposite_Direction(a) = b if
             Opposite_Direction(b) = a.
         
-        Direction_Factor(DRight) = 1.
+        Opposite_Direction(DLeft) = DRight.
         
         Distance(a, b, min_d) :-
             Instance(a, Rectangles),
