@@ -41,6 +41,7 @@ fn main() {
             let msg_str = msg.as_str();
             let mut out_file = fs::File::create(ddlog_path).expect(msg_str);
             out_file.write_all(ddlog.as_bytes()).expect(msg_str);
+            std::process::exit(0);
         }
         Err(err) => match err {
             ParseError::UnrecognizedToken { token, expected } => {
@@ -60,6 +61,7 @@ fn main() {
 
                 term::emit(&mut writer.lock(), &config, &files, &diagnostic)
                     .unwrap();
+                std::process::exit(1);
             },
             ParseError::InvalidToken{location} => {
                 let diagnostic = Diagnostic::error()
@@ -73,8 +75,13 @@ fn main() {
 
                 term::emit(&mut writer.lock(), &config, &files, &diagnostic)
                     .unwrap();
+
+                std::process::exit(1);
             }
-            _ => println!("{:?}", err),
-        },
+            _ => {
+                eprintln!("{:?}", err);
+                std::process::exit(1);
+            },
+        }
     }
 }
