@@ -73,7 +73,7 @@ Term: ast::Term = {
 }
 
 Variable: ast::Variable = {
-    r"[a-z_]+'*" => String::from_str(<>).unwrap()
+    r"[a-z][a-z0-9_]*'*" => String::from_str(<>).unwrap()
 }
 
 Expression: ast::Expression = {
@@ -82,7 +82,7 @@ Expression: ast::Expression = {
 }
 
 FunctionAssignment: ast::FunctionAssignment = {
-    <name:UpperTerm> "(" <arguments:Comma<Expression>>") = " <value:Expression> => ast::FunctionAssignment {
+    <name:UpperTerm> "(" <arguments:Comma<Expression>> ")" "=" <value:Expression> => ast::FunctionAssignment {
         name,
         arguments,
         value: Some(value),
@@ -111,14 +111,23 @@ RawDDLog: ast::RawDDLog = {
             .to_string()
     }
 }
+Comparator: ast::Comparator = {
+   "=" => ast::Comparator::Equal,
+   "!=" => ast::Comparator::NotEqual,
+   "<" => ast::Comparator::LessThan,
+   ">" => ast::Comparator::GreaterThan,
+   "<=" => ast::Comparator::LessThanOrEqualTo,
+   ">=" => ast::Comparator::GreaterThanOrEqualTo,
+}
 
 RuleClause: ast::RuleClause = {
     <FunctionAssignment> => ast::RuleClause::ClauseFunctionAssignment(<>),
-   <RawDDLog> => ast::RuleClause::ClauseRawDDLog(<>)
+    <Expression> <Comparator> <Expression> => ast::RuleClause::ClauseComparison(<>),
+    <RawDDLog> => ast::RuleClause::ClauseRawDDLog(<>)
 }
 
 Axiom: ast::Axiom = {
-    <name:UpperTerm> "=" <value:Num> => ast::Axiom::StaticAssignment {
+    <name:UpperTerm> "=" <value:Num> "." => ast::Axiom::StaticAssignment {
         name,
         value
     },
@@ -168,5 +177,5 @@ Comma<T>: Vec<T> = { // (0)
 };
 
 Num: i64 = {
-    r"[0-9]+" => i64::from_str(<>).unwrap()
+    r"-?[0-9]+" => i64::from_str(<>).unwrap()
 };

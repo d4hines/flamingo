@@ -487,7 +487,18 @@ fn print_axiom(
                             FunctionAssignmentKinds::Normal
                         };
                         f.to_ddlog_assignment(kind)
-                    }
+                    },
+                    RuleClause::ClauseComparison(left, comparator, right) => {
+                        let comp_str = match comparator {
+                            Comparator::Equal => "=",
+                            Comparator::NotEqual => "!=",
+                            Comparator::LessThan => "<",
+                            Comparator::GreaterThan => ">",
+                            Comparator::LessThanOrEqualTo => "<=",
+                            Comparator::GreaterThanOrEqualTo => ">="
+                        };
+                        format!("{} {} {}", left.to_ddlog_value(), comp_str, right.to_ddlog_value())
+                    },
                     RuleClause::ClauseRawDDLog(raw) => raw.to_ddlog(),
                 })
                 .collect::<Vec<String>>()

@@ -69,8 +69,19 @@ pub enum FunctionAssignmentKinds {
 pub type RawDDLog = String;
 
 #[derive(PartialEq, Debug)]
+pub enum Comparator {
+    Equal,
+    NotEqual,
+    GreaterThan,
+    LessThan,
+    GreaterThanOrEqualTo,
+    LessThanOrEqualTo
+}
+
+#[derive(PartialEq, Debug)]
 pub enum RuleClause {
     ClauseFunctionAssignment(FunctionAssignment),
+    ClauseComparison(Expression, Comparator, Expression),
     ClauseRawDDLog(RawDDLog),
 }
 #[derive(PartialEq, Debug)]
