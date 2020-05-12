@@ -25,6 +25,8 @@
 
     In a WSL terminal, run:
     ```
+    sudo apt-get update
+    sudo apt install build-essential
     cargo install flamingo
     ```
 
