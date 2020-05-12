@@ -33,17 +33,18 @@ output relation OutFluent(params: FluentParam, ret: FluentValue)
 //////////// Dynamic Part of Lib
 
 // Sort Literals
-typedef Axes = X | Y
+typedef Directions = DTop | DLeft | DBottom | DRight
+typedef Group_Icons = NoIcon | Form | Disband
 
 // Nodes of the hierarchy
 typedef Node = Universe
     | Actions
     | Rectangles
-    
+
 #[rust="serde(untagged)"]
 typedef AttributeValue = Attr_Width{width: s64}
-    | Attr_Height{height: s64} 
-    
+    | Attr_Height{height: s64}
+
 relation Width(oid: OID, value: s64)
 Width(oid, x) :- Object(oid, _, attributes),
     Some{Attr_Width{var x}} = map_get(attributes, "width").
@@ -56,18 +57,20 @@ Height(oid, x) :- Object(oid, _, attributes),
 Link(Rectangles, Universe).
 
 // Statics
-relation Opposite_Direction(_1: Axes, ret: Axes)
+relation Opposite_Direction(_1: Directions, ret: Directions)
 
 /////// Fluents //////////////////
 // Basic
 typedef FluentParam = Param_Grouped_With{grouped_with_1: OID, grouped_with_2: OID}
+    | Param_Moving{moving_1: OID}
 
 typedef FluentValue = Value_Grouped_With{grouped_with_ret: bool}
+    | Value_Moving{moving_ret: bool}
 
 // Defined
-relation Side(_1: OID, _2: Axes, _3: s64)
+relation Side(_1: OID, _2: Directions)
 relation Distance(_1: OID, _2: OID, _3: s64)
-relation Overlaps(_1: OID, _2: OID)
+relation Group_Icon(_1: OID, _2: Group_Icons)
 
 // Bundle of all the output fluents
 #[rust="serde(untagged)"]
@@ -77,9 +80,12 @@ output relation Output(val: Output_Value)
 Output(Out_Side{side}) :- Side[side].
 
 ///////////// Axioms ///////////////
-function static_Corner_Snapping_Threshold(): s64 {
-    30
-}
+function static_Snapping_Threshold(): s64 { 30 }
+
+Opposite_Direction(a, b) :-
+    Opposite_Direction(b, a).
+
+Opposite_Direction(DLeft, DRight).
 
 Distance(a, b, min_d) :-
     Instance(a, Rectangles),
@@ -87,3 +93,7 @@ Distance(a, b, min_d) :-
     not Overlaps(a, b),
     Opposite_Direction(dir, dir__prime),
     var min_d = Aggregate((a, b), group_min(b)).
+
+OutFluent(Param_Moving{other}, Value_Moving{false}) :-
+    Instance(other, Rectangles),
+    not InFluent(Param_Grouped_With{other, _}, Value_Grouped_With{true}).

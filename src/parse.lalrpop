@@ -1,0 +1,181 @@
+use std::str::FromStr;
+use crate::ast;
+
+grammar;
+
+UpperTerm : ast::UpperTerm = {
+    r"[A-Z][A-Za-z_]*" => String::from_str(<>).unwrap()
+}
+
+Enum : ast::Enum = {
+    <name:UpperTerm> "::" "{" <terms:Comma<UpperTerm>> "}." => ast::Enum {
+        name,
+        terms,
+    }
+}
+
+Params: Vec<ast::UpperTerm> = {
+    <v:(<UpperTerm> "x")*> <e:UpperTerm?> => match e {
+        None=> v,
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            v
+        }
+    }
+};
+
+FunctionDeclaration : ast::FunctionDeclaration = {
+    <name:UpperTerm> ":" <ret:UpperTerm> => ast::FunctionDeclaration {
+        name,
+        params: None,
+        ret
+    },
+    <name:UpperTerm> ":" <params:Params> "->" <ret:UpperTerm> => ast::FunctionDeclaration {
+        name,
+        params: Some(params),
+        ret
+    }
+}
+
+Sort: ast::Sort = {
+    <name:UpperTerm> "::" <parent_sorts:Comma<UpperTerm>> "." => ast::Sort {
+        name,
+        parent_sorts,
+        attributes: None
+    },
+    <name:UpperTerm> "::" <parent_sorts:Comma<UpperTerm>>
+        "attributes"
+        <attrs: FunctionDeclaration+>
+        "."
+        => ast::Sort {
+            name,
+            parent_sorts,
+            attributes: Some(attrs)
+        }
+}
+
+DefinedFluentDeclaration: ast::DefinedFluentDeclaration = {
+    "output" <FunctionDeclaration> => ast::DefinedFluentDeclaration {
+        output: true,
+        declaration: <>
+    },
+    <FunctionDeclaration> => ast::DefinedFluentDeclaration {
+        output: false,
+        declaration: <>
+    }
+}
+
+Term: ast::Term = {
+    <UpperTerm> => ast::Term::TermUpper(<>),
+    <Num> => ast::Term::TermInteger(<>),
+    r"#true|#false" => ast::Term::TermBoolean(<> == "#true")
+}
+
+Variable: ast::Variable = {
+    r"[a-z_][a-z0-9_]*'*" => String::from_str(<>).unwrap()
+}
+
+Expression: ast::Expression = {
+    <Term> => ast::Expression::ExpressionTerm(<>),
+    <Variable> => ast::Expression::ExpressionVariable(<>)
+}
+
+FunctionAssignment: ast::FunctionAssignment = {
+    <name:UpperTerm> "(" <arguments:Comma<Expression>> ")" "=" <value:Expression> => ast::FunctionAssignment {
+        name,
+        arguments,
+        value: Some(value),
+        negated: false,
+    },
+    <name:UpperTerm>"("<arguments:Comma<Expression>>")" => ast::FunctionAssignment {
+        name,
+        arguments,
+        value: None,
+        negated: false
+    },
+    "-"<name:UpperTerm>"("<arguments:Comma<Expression>>")" => ast::FunctionAssignment {
+        name,
+        arguments,
+        value: None,
+        negated: true
+    }
+}
+
+RawDDLog: ast::RawDDLog = {
+    r"#ddlog \{ .* \}" => {
+       let s =  String::from_str(<>).unwrap();
+        s.trim_start_matches("#ddlog {")
+            .trim_end_matches("}")
+            .trim()
+            .to_string()
+    }
+}
+Comparator: ast::Comparator = {
+   "=" => ast::Comparator::Equal,
+   "!=" => ast::Comparator::NotEqual,
+   "<" => ast::Comparator::LessThan,
+   ">" => ast::Comparator::GreaterThan,
+   "<=" => ast::Comparator::LessThanOrEqualTo,
+   ">=" => ast::Comparator::GreaterThanOrEqualTo,
+}
+
+RuleClause: ast::RuleClause = {
+    <FunctionAssignment> => ast::RuleClause::ClauseFunctionAssignment(<>),
+    <Expression> <Comparator> <Expression> => ast::RuleClause::ClauseComparison(<>),
+    <RawDDLog> => ast::RuleClause::ClauseRawDDLog(<>)
+}
+
+Axiom: ast::Axiom = {
+    <name:UpperTerm> "=" <value:Num> "." => ast::Axiom::StaticAssignment {
+        name,
+        value
+    },
+    <FunctionAssignment>"." => ast::Axiom::Fact(<>),
+    <head:FunctionAssignment> "if" <body:Comma<RuleClause>> "." => ast::Axiom::Rule {
+        head,
+        body
+    }
+}
+
+pub ALMModule: ast::ALMModule = {
+    "module Window_demo"
+    "enums"
+        <enums:Enum+>
+    "sorts"
+        <sorts:Sort+>
+    "statics"
+        <statics:FunctionDeclaration+>
+    "fluents
+        basic"
+            <basic:FunctionDeclaration+>
+        "defined"
+            <defined:DefinedFluentDeclaration+>
+    "axioms"
+        <axioms:Axiom+>
+    => ast::ALMModule {
+        enums,
+        sorts,
+        statics,
+        fluents: ast::Fluents {
+            basic,
+            defined,
+        },
+        axioms
+    }
+}
+
+Comma<T>: Vec<T> = { // (0)
+    <v:(<T> ",")*> <e:T?> => match e { // (1)
+        None=> v,
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            v
+        }
+    }
+};
+
+Num: i64 = {
+    r"-?[0-9]+" => i64::from_str(<>).unwrap()
+};

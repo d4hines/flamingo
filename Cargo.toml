@@ -1,0 +1,13 @@
+[package]
+name = "flamingo"
+version = "0.1.0"
+authors = ["Daniel Hines <d4hines@gmail.com>"]
+edition = "2018"
+
+[build-dependencies]
+lalrpop = { version = "0.18.1", features = [ "lexer" ] }
+
+[dependencies]
+lalrpop-util = "0.18.1"
+regex = "1"
+codespan-reporting = "0.9.3"
