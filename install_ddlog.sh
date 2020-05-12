@@ -10,4 +10,6 @@ if ! echo ":$PATH:" | grep -q :"ddlog": ; then
     echo "export DDLOG_HOME=~/.ddlog" >> ~/.profile
     echo "export PATH=\$DDLOG_HOME/bin:\$PATH" >> ~/.profile
     echo "Done"
+else
+    echo "DDlog is already on path. Skipping."
 fi
