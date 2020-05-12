@@ -1,14 +1,4 @@
-# Neon
-native/target
-native/index.node
-native/artifacts.json
-**/*~
-**/node_modules
-**/.DS_Store
-
-# DDLog
+target
+test/expected_ddlog
+test/full_logic_alm
 ddlog
-
-# Test
-./test/logic_alm
-

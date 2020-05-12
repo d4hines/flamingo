@@ -10,6 +10,7 @@ use print::*;
 use std::env;
 use std::fs;
 use std::io::prelude::*;
+use std::path::Path;
 
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
@@ -19,6 +20,10 @@ use codespan_reporting::term;
 lalrpop_mod!(pub parse);
 
 fn main() {
+    let flamingo_path_str = env::args().nth(0).unwrap();
+    let flamingo_path = Path::new(flamingo_path_str);
+    flamingo_path.parent()
+
     let alm_file = env::args()
         .nth(1)
         .expect("Please specify an ALM module to compile.");

@@ -1,3 +1,18 @@
-# foo
+# Getting Started
+- Install WSL
 
-An ALM comiler and runtime for reactive systems.
+    In an administrative PowerShell console, run:
+    ```
+    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux 
+    ```
+- Install Rust
+
+    You'll need to install it both on Windows and WSL. Instructions are here: https://www.rust-lang.org/learn/get-started
+- Install Flamingo
+
+    In a WSL terminal, run:
+    ```
+    sudo apt install pkg-config libssl-dev
+    cargo install flamingo
+    ```
+
