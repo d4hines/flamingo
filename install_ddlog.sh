@@ -7,8 +7,8 @@ if ! echo ":$PATH:" | grep -q :"ddlog": ; then
     rm ddlog.tar.gz
     
     echo "Adding DDLog to path."
-    echo "export DDLOG_HOME=~/.ddlog" >> ~/.profile
-    echo "export PATH=\$DDLOG_HOME/bin:\$PATH" >> ~/.profile
+    echo "export DDLOG_HOME=~/.ddlog" >> ~/.bashrc
+    echo "export PATH=\$DDLOG_HOME/bin:\$PATH" >> ~/.bashrc
     echo "Done"
 else
     echo "DDlog is already on path. Skipping."
