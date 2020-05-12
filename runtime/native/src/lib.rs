@@ -123,7 +123,6 @@ impl Flamingo {
 
         self.hddlog
             .apply_valupdates(all_cmds.concat().into_iter())
-            // .apply_valupdates(outfluent_cmds.into_iter())
             .unwrap();
         // This contains the new stable state.
         let mut influent_delta = self.hddlog.transaction_commit_dump_changes().unwrap();
