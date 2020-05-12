@@ -150,16 +150,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "compiler"
-version = "0.1.0"
-dependencies = [
- "codespan-reporting",
- "lalrpop",
- "lalrpop-util",
- "regex",
-]
-
-[[package]]
 name = "constant_time_eq"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -240,6 +230,16 @@ name = "fixedbitset"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "86d4de0081402f5e88cdac65c8dcdcc73118c1a7a465e2a05f0da05843a8ea33"
+
+[[package]]
+name = "flamingo"
+version = "0.1.0"
+dependencies = [
+ "codespan-reporting",
+ "lalrpop",
+ "lalrpop-util",
+ "regex",
+]
 
 [[package]]
 name = "fuchsia-cprng"

@@ -8,6 +8,10 @@
 - Install Rust
 
     You'll need to install it both on Windows and WSL. Instructions are here: https://www.rust-lang.org/learn/get-started
+- Install DDLog
+    ```
+    
+    ```
 - Install Flamingo
 
     In a WSL terminal, run:

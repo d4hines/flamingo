@@ -9,8 +9,6 @@ use lalrpop_util::*;
 use print::*;
 use std::env;
 use std::fs;
-use std::io::prelude::*;
-use std::path::Path;
 
 use codespan_reporting::diagnostic::{Diagnostic, Label};
 use codespan_reporting::files::SimpleFiles;
@@ -20,10 +18,6 @@ use codespan_reporting::term;
 lalrpop_mod!(pub parse);
 
 fn main() {
-    let flamingo_path_str = env::args().nth(0).unwrap();
-    let flamingo_path = Path::new(flamingo_path_str);
-    flamingo_path.parent()
-
     let alm_file = env::args()
         .nth(1)
         .expect("Please specify an ALM module to compile.");
@@ -38,14 +32,21 @@ fn main() {
     let parse_result = parse::ALMModuleParser::new().parse(contents.as_str());
     match parse_result {
         Ok(ast) => {
-            let ddlog = ast.to_ddlog();
-            let mut ddlog_path = alm_file.clone().trim_end_matches("alm").to_owned();
-            ddlog_path.push_str("dl");
-
-            let msg = format!("Failed to create file {}", ddlog_path);
-            let msg_str = msg.as_str();
-            let mut out_file = fs::File::create(ddlog_path).expect(msg_str);
-            out_file.write_all(ddlog.as_bytes()).expect(msg_str);
+            println!("{}", ast.to_ddlog());
+            eprintln!("ALM module compiled successfully!
+             .-.
+            ((`-)
+             \\\\
+              \\\\
+       .=\"\"\"=._))
+      /  .,   .'
+     /__(,_.-'
+    `    /|
+        /_|__
+          | `))
+          |
+         -\"==
+");
             std::process::exit(0);
         }
         Err(err) => match err {
