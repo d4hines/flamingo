@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 if ! echo ":$PATH:" | grep -q :"ddlog": ; then
     echo "Fetching DDLog..."
     wget -q https://github.com/vmware/differential-datalog/releases/download/v0.17.4/ddlog-v0.17.4-20200508014413-linux.tar.gz -O ddlog.tar.gz

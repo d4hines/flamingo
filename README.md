@@ -15,6 +15,7 @@
     ```
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
     ```
+    Be sure to answer its prompts.
 - Install DDLog
     In a WSL terminal, run:
     ``` 
