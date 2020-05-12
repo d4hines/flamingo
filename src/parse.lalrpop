@@ -112,7 +112,7 @@ RawDDLog: ast::RawDDLog = {
     }
 }
 Comparator: ast::Comparator = {
-   "=" => ast::Comparator::Equal,
+   "==" => ast::Comparator::Equal,
    "!=" => ast::Comparator::NotEqual,
    "<" => ast::Comparator::LessThan,
    ">" => ast::Comparator::GreaterThan,

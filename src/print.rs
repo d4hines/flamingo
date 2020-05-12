@@ -490,7 +490,7 @@ fn print_axiom(
                     }
                     RuleClause::ClauseComparison(left, comparator, right) => {
                         let comp_str = match comparator {
-                            Comparator::Equal => "=",
+                            Comparator::Equal => "==",
                             Comparator::NotEqual => "!=",
                             Comparator::LessThan => "<",
                             Comparator::GreaterThan => ">",
