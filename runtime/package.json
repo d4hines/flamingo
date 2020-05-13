@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "An ALM compiler and runtime for reactive systems.",
   "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "repository": "https://github.com/d4hines/flamingo.git",
   "author": "Daniel Hines <d4hines@gmail.com>",
   "license": "MIT"
