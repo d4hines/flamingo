@@ -11,7 +11,8 @@ use types::*;
 use types::Object;
 use value::Relations;
 use value::Value;
-
+use std::fs;
+use std::sync::{Mutex};
 // Neon imports
 use neon::prelude::*;
 
@@ -154,7 +155,10 @@ declare_types! {
     pub class JsFlamingo for Flamingo {
         init(mut _cx) {
           fn cb(_rel: usize, _rec: &Record, _w: isize) {}
-          let hddlog = HDDlog::run(1 as usize, false, cb).unwrap();
+          let mut hddlog = HDDlog::run(1 as usize, false, cb).unwrap();
+          let mut file = fs::File::create("history.txt").unwrap();
+          let mut foo = Some(Mutex::new(file));
+          hddlog.record_commands(&mut foo);
 
           Ok(Flamingo {
             hddlog,
