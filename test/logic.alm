@@ -32,7 +32,7 @@ module Window_demo
             Opposite_Direction(dir) = dir',
             #ddlog { var min_d = Aggregate((a, b), group_min(b)) }.
         
-        Occurs(action) causes -Moving(other) if
+        occurs(action) causes -Moving(other) if
             Instance(other, Rectangles),
             -Grouped_With(other, _).
 

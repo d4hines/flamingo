@@ -136,7 +136,7 @@ Axiom: ast::Axiom = {
         head,
         body
     },
-    "Occurs(action) causes" <head:FunctionAssignment> "if" <body:Comma<RuleClause>> "." => ast::Axiom::Rule {
+    "occurs(action) causes" <head:FunctionAssignment> "if" <body:Comma<RuleClause>> "." => ast::Axiom::Rule {
         head,
         body
     }

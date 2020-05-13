@@ -91,7 +91,6 @@ module Window_demo
             Side(rectangle, DTop, t_value),
             Height(rectangle) = h,
             #ddlog { var b_value = t_value + h }.
-
         On_Same_Line(a, b, axis) if
             Side(a, dir, a1),
             Axis(dir) = axis,
