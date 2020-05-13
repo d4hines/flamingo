@@ -156,7 +156,7 @@ declare_types! {
         init(mut _cx) {
           fn cb(_rel: usize, _rec: &Record, _w: isize) {}
           let mut hddlog = HDDlog::run(1 as usize, false, cb).unwrap();
-          let mut file = fs::File::create("history.txt").unwrap();
+          let file = fs::File::create("history.txt").unwrap();
           let mut foo = Some(Mutex::new(file));
           hddlog.record_commands(&mut foo);
 
